@@ -7,8 +7,6 @@ on:
   schedule: # Weekly at 00:00 UTC on Monday
     - cron: '0 0 * * 1' 
   workflow_dispatch: # Allow manual triggering 
-    branches: 
-      - 'main'
 
 env:
   AWS_REGION: 'us-west-1'
@@ -44,8 +42,8 @@ jobs:
             --template-file pipeline/infrastructure/bootstrap.yaml \
             --stack-name $STACK_NAME \
             --parameter-overrides PipelineBucketName=$PIPELINE_BUCKET_NAME
-          echo "REPOSITORY_NAME=$REPOSITORY_NAME" >> $GITHUB_ENV
-          echo "BUCKET_NAME=$PIPELINE_BUCKET_NAME" >> $GITHUB_ENV
+          echo "REPOSITORY_NAME=$REPOSITORY_NAME" >> $GITHUB_OUTPUT
+          echo "BUCKET_NAME=$PIPELINE_BUCKET_NAME" >> $GITHUB_OUTPUT
 
   build:
     needs: bootstrap # Pipeline Bucket must exist
@@ -89,8 +87,9 @@ jobs:
       - name: Upload Artifacts to Pipeline Bucket
         id: upload_artifacts
         run: |
-          echo "ARTIFACT_PATH=${{ github.sha }}-${{ env.ARTIFACT_NAME }}.zip" >> $GITHUB_ENV
-          aws s3 cp "${{ github.workspace }}/${{ env.ARTIFACT_NAME }}.zip" "s3://${{ env.BUCKET_NAME }}/${{ env.ARTIFACT_PATH }}"
+          ARTIFACT_PATH="${{ github.sha }}-${{ env.ARTIFACT_NAME }}.zip
+          aws s3 cp "${{ github.workspace }}/${{ env.ARTIFACT_NAME }}.zip" "s3://${{ env.BUCKET_NAME }}/$ARTIFACT_PATH"
+          echo "ARTIFACT_PATH=$ARTIFACT_PATH" >> $GITHUB_OUTPUT
 
   deploy:
     name: Deploy to ${{ matrix.region }}
