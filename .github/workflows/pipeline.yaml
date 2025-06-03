@@ -3,17 +3,17 @@ name: Build and Deploy .NET Application
 on:
   push:
     branches:
-      - {{.transformed-branch-name}}
+      - 'main'
   schedule: # Weekly at 00:00 UTC on Monday
     - cron: '0 0 * * 1' 
   workflow_dispatch: # Allow manual triggering 
     branches: 
-      - {{.transformed-branch-name}}
+      - 'main'
 
 env:
-  AWS_REGION: {{.pipeline-aws-region}}
-  ARTIFACT_NAME: {{.application-name}}
-  BUCKET_NAME: {{.pipeline-bucket-name}}
+  AWS_REGION: 'us-west-1'
+  ARTIFACT_NAME: 'Bookstore.Web'
+  BUCKET_NAME: ''
 
 jobs:
   bootstrap:
@@ -48,7 +48,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: ${{.dotnet-version}}
+          dotnet-version: '8.0.x'
 
       - name: Build for Linux
         run: |
@@ -86,7 +86,7 @@ jobs:
     strategy: # Support multiple deployment environments
       matrix:
         include:
-          - region: {{.depl-env-region}}
+          - region: 'us-west-1'
           # Add more regions as necessary
 
     steps:
