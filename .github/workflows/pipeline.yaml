@@ -87,7 +87,7 @@ jobs:
       - name: Upload Artifacts to Pipeline Bucket
         id: upload_artifacts
         run: |
-          ARTIFACT_PATH="${{ github.sha }}-${{ env.ARTIFACT_NAME }}.zip
+          ARTIFACT_PATH="${{ github.sha }}-${{ env.ARTIFACT_NAME }}.zip"
           aws s3 cp "${{ github.workspace }}/${{ env.ARTIFACT_NAME }}.zip" "s3://${{ env.BUCKET_NAME }}/$ARTIFACT_PATH"
           echo "ARTIFACT_PATH=$ARTIFACT_PATH" >> $GITHUB_OUTPUT
 
