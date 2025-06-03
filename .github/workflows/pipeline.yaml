@@ -79,11 +79,9 @@ jobs:
           aws s3 cp "${{ github.workspace }}/${{ env.ARTIFACT_NAME }}.zip" "s3://${{ env.BUCKET_NAME }}/${{ env.ARTIFACT_PATH }}"
 
   deploy:
-    name: Deploy to ${{ env.STAGE }} in ${{ matrix.region }}
+    name: Deploy to ${{ matrix.region }}
     needs: build # Application Artifacts must be uploaded
     runs-on: ubuntu-latest
-    env:
-      STAGE: 'beta'
 
     strategy: # Support multiple deployment environments
       matrix:
@@ -106,14 +104,14 @@ jobs:
         run: |
           aws cloudformation deploy \
             --template-file pipeline/infra/application.yaml \
-            --stack-name "${{ env.APPLICATION_NAME }}-${{ env.STAGE }}-${{ matrix.region }}" \
+            --stack-name "${{ env.APPLICATION_NAME }}-${{ matrix.region }}" \
             --parameter-overrides ArtifactS3Bucket=${{ env.BUCKET_NAME }} \
             --capabilities CAPABILITY_NAMED_IAM
 
       - name: Deploy Application
         run: | 
           INSTANCE_ID=$(aws cloudformation describe-stacks \ 
-            --stack-name "${{ env.APPLICATION_NAME }}-${{ env.STAGE }}-${{ matrix.region }}" \
+            --stack-name "${{ env.APPLICATION_NAME }}-${{ matrix.region }}" \
             --query "Stacks[0].Outputs[?OutputKey=='EC2InstanceId'].OutputValue" \
             --output text)
             
