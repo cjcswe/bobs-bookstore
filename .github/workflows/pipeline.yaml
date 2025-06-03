@@ -56,10 +56,10 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore dependencies
-        run: dotnet restore
+        run: dotnet restore ./app/Bookstore.Web/Bookstore.Web.csproj --runtime linux-x64
 
       - name: Build project
-        run: dotnet build --no-restore --configuration Release
+        run: dotnet build ./app/Bookstore.Web/Bookstore.Web.csproj --configuration Release --runtime linux-x64 --no-restore
 
       - name: Publish for Linux
         run: |
