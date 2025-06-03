@@ -1,6 +1,11 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'Pipeline Infrastructure Stack'
 
+Parameters:
+  PipelineBucketName:
+    Type: String
+    Description: 'Name of the Pipeline Artifact S3 Bucket'
+
 Resources:
   # KMS Key for S3 bucket encryption
   ArtifactsKey:
@@ -21,7 +26,7 @@ Resources:
   ArtifactsBucket:
     Type: 'AWS::S3::Bucket'
     Properties:
-      BucketName: !Sub '${AWS::StackName}-pipeline-artifacts'
+      BucketName: !Ref 'PipelineBucketName'
       LifecycleConfiguration:
         Rules:
           - Id: 'Delete365Days'

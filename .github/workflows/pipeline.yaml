@@ -32,10 +32,11 @@ jobs:
       
       - name: Deploy Bootstrap CFN Stack # Create Artifacts S3 Bucket
         run: |
-          PIPELINE_BUCKET_NAME="pipeline-bucket-$(echo '${{ github.repository }}' | tr '/' '-')"
+          PIPELINE_BUCKET_NAME="$(echo '${{ github.repository }}' | tr '/' '-')-pipeline-bucket"
+          STACK_NAME="$(echo '${{ github.repository }}' | tr '/' '-')pipeline-bootstrap-stack"
           aws cloudformation deploy \
             --template-file pipeline/infrastructure/bootstrap.yaml \
-            --stack-name pipeline-bootstrap \
+            --stack-name $STACK_NAME \
             --parameter-overrides PipelineBucketName=$PIPELINE_BUCKET_NAME
           echo "BUCKET_NAME=$PIPELINE_BUCKET_NAME" >> $GITHUB_ENV
 
@@ -51,12 +52,14 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      - name: Build for Linux
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build project
+        run: dotnet build --no-restore --configuration Release
+
+      - name: Publish for Linux
         run: |
-          dotnet restore
-          
-          dotnet build --no-restore --configuration Release
-          
           dotnet publish ./app/Bookstore.Web/Bookstore.Web.csproj `
             --configuration Release `
             --runtime linux-x64 `
@@ -64,7 +67,8 @@ jobs:
             --output ${{github.workspace}}/publish `
             --no-build
 
-          Compress-Archive -Path "${{ github.workspace }}/publish/*" -DestinationPath "${{ github.workspace }}/${{ env.ARTIFACT_NAME }}.zip"
+      - name: Compress artifacts
+        run: Compress-Archive -Path "${{ github.workspace }}/publish/*" -DestinationPath "${{ github.workspace }}/${{ env.ARTIFACT_NAME }}.zip"
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
