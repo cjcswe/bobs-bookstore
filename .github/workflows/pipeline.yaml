@@ -14,7 +14,7 @@ env:
   AWS_REGION: 'us-west-1'
   REPOSITORY_NAME: ''
   BUCKET_NAME: ''
-  ARTIFACT_NAME: 'Bookstore.Web'
+  ARTIFACT_NAME: 'Bookstore-Web'
   ARTIFACT_PATH: ''
 
 jobs:
@@ -67,7 +67,7 @@ jobs:
             --configuration Release `
             --runtime linux-x64 `
             --self-contained true `
-            --output ${{github.workspace}}/publish `
+            --output ${{ github.workspace }}/publish `
             --no-build
 
       - name: Compress artifacts
@@ -82,7 +82,7 @@ jobs:
 
       - name: Upload Artifacts to Pipeline Bucket
         run: |
-          echo "ARTIFACT_PATH=${{ env.ARTIFACT_NAME }}-${{ github.sha }}.zip" >> $GITHUB_ENV
+          echo "ARTIFACT_PATH=${{ github.sha }}-${{ env.ARTIFACT_NAME }}.zip" >> $GITHUB_ENV
           aws s3 cp "${{ github.workspace }}/${{ env.ARTIFACT_NAME }}.zip" "s3://${{ env.BUCKET_NAME }}/${{ env.ARTIFACT_PATH }}"
 
   deploy:
