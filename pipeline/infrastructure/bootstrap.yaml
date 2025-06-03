@@ -1,0 +1,48 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Pipeline Infrastructure Stack'
+
+Resources:
+  # KMS Key for S3 bucket encryption
+  ArtifactsKey:
+    Type: 'AWS::KMS::Key'
+    Properties:
+      Description: 'Key for encrypting pipeline artifacts'
+      EnableKeyRotation: true
+      KeyPolicy:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: 'kms:*'
+            Resource: '*'
+
+  # S3 Bucket for storing pipeline artifacts
+  ArtifactsBucket:
+    Type: 'AWS::S3::Bucket'
+    Properties:
+      BucketName: !Sub '${AWS::StackName}-pipeline-artifacts'
+      LifecycleConfiguration:
+        Rules:
+          - Id: 'Delete365Days'
+            Status: 'Enabled'
+            ExpirationInDays: 365
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: 'aws:kms'
+              KMSMasterKeyID: !GetAtt 'ArtifactsKey.Arn'
+
+  # Bucket policy allowing EC2 instances to download artifacts
+  ArtifactsBucketPolicy:
+    Type: 'AWS::S3::BucketPolicy'
+    Properties:
+      Bucket: !Ref 'ArtifactsBucket'
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: 'Allow'
+            Principal:
+              Service: 'ec2.amazonaws.com'
+            Action: 's3:GetObject'
+            Resource: !Sub 'arn:aws:s3:::${ArtifactsBucket}/*'
