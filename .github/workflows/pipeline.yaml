@@ -10,16 +10,13 @@ on:
 
 env:
   AWS_REGION: 'us-west-1'
-  REPOSITORY_NAME: ''
   BUCKET_NAME: ''
   ARTIFACT_NAME: 'Bookstore.Web'
-  ARTIFACT_PATH: ''
 
 jobs:
   bootstrap:
     runs-on: ubuntu-latest
     outputs:
-      REPOSITORY_NAME: ${{ steps.deploy_stack.outputs.REPOSITORY_NAME }}
       BUCKET_NAME: ${{ steps.deploy_stack.outputs.BUCKET_NAME }}
     steps:
       - name: Checkout code
@@ -35,15 +32,17 @@ jobs:
       - name: Deploy Bootstrap CFN Stack # Create Artifacts S3 Bucket
         id: deploy_stack
         run: |
-          REPOSITORY_NAME="$(echo '${{ github.repository }}' | tr '/' '-')"
-          PIPELINE_BUCKET_NAME="$REPOSITORY_NAME-pipeline-bucket"
-          STACK_NAME="$REPOSITORY_NAME-pipeline-bootstrap-stack"
-          aws cloudformation deploy \
-            --template-file pipeline/infrastructure/bootstrap.yaml \
-            --stack-name $STACK_NAME \
-            --parameter-overrides PipelineBucketName=$PIPELINE_BUCKET_NAME
-          echo "REPOSITORY_NAME=$REPOSITORY_NAME" >> $GITHUB_OUTPUT
-          echo "BUCKET_NAME=$PIPELINE_BUCKET_NAME" >> $GITHUB_OUTPUT
+          BUCKET_NAME="${{ env.BUCKET_NAME }}"
+          if [ -z "$BUCKET_NAME" ]; then
+            REPOSITORY_NAME="$(echo '${{ github.repository }}' | tr '/' '-')"
+            BUCKET_NAME="$REPOSITORY_NAME-pipeline-bucket"
+            STACK_NAME="$REPOSITORY_NAME-pipeline-bootstrap-stack"
+            aws cloudformation deploy \
+              --template-file pipeline/infrastructure/bootstrap.yaml \
+              --stack-name $STACK_NAME \
+              --parameter-overrides PipelineBucketName=$BUCKET_NAME
+          fi
+          echo "bucket_name=$BUCKET_NAME" >> $GITHUB_OUTPUT
 
   build:
     needs: bootstrap # Pipeline Bucket must exist
@@ -88,7 +87,7 @@ jobs:
         id: upload_artifacts
         run: |
           ARTIFACT_PATH="${{ github.sha }}-${{ env.ARTIFACT_NAME }}.zip"
-          aws s3 cp "${{ github.workspace }}/${{ env.ARTIFACT_NAME }}.zip" "s3://${{ env.BUCKET_NAME }}/$ARTIFACT_PATH"
+          aws s3 cp "${{ github.workspace }}/${{ env.ARTIFACT_NAME }}.zip" "s3://${{ needs.bootstrap.outputs.BUCKET_NAME }}/$ARTIFACT_PATH"
           echo "ARTIFACT_PATH=$ARTIFACT_PATH" >> $GITHUB_OUTPUT
 
   deploy:
@@ -115,16 +114,18 @@ jobs:
 
       - name: Deploy Application Infrastructure
         run: |
+          STACK_NAME="$(echo '${{ github.repository }}' | tr '/' '-')-${{ matrix.region }}"
           aws cloudformation deploy \
             --template-file pipeline/infra/application.yaml \
-            --stack-name "${{ env.REPOSITORY_NAME }}-${{ matrix.region }}" \
-            --parameter-overrides ArtifactS3Bucket=${{ env.BUCKET_NAME }} \
+            --stack-name $STACK_NAME" \
+            --parameter-overrides ArtifactS3Bucket=${{ needs.bootstrap.outputs.BUCKET_NAME }} \
             --capabilities CAPABILITY_NAMED_IAM
+          echo "STACK_NAME=$STACK_NAME" >> $GITHUB_ENV
 
       - name: Deploy Application
         run: | 
           INSTANCE_ID=$(aws cloudformation describe-stacks \ 
-            --stack-name "${{ env.REPOSITORY_NAME }}-${{ matrix.region }}" \
+            --stack-name "${{ env.STACK_NAME }}-${{ matrix.region }}" \
             --query "Stacks[0].Outputs[?OutputKey=='EC2InstanceId'].OutputValue" \
             --output text)
             
@@ -134,7 +135,7 @@ jobs:
             --comment "Download and start application" \
             --parameters "{
               \"commands\": "echo 'hello';",
-              \"artifactUri\": [\"s3://${{ env.BUCKET_NAME }}/${{ env.ARTIFACT_PATH }}\"]
+              \"artifactUri\": [\"s3://${{ needs.bootstrap.outputs.BUCKET_NAME }}/${{ needs.build.outputs.ARTIFACT_PATH }}\"]
             }" \
             --query "Command.CommandId" \ 
             --output text)
