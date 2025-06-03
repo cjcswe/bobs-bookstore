@@ -79,8 +79,8 @@ jobs:
           aws s3 cp "${{ github.workspace }}/${{ env.ARTIFACT_NAME }}.zip" "s3://${{ env.BUCKET_NAME }}/${{ env.ARTIFACT_PATH }}"
 
   deploy:
+    name: Deploy to ${{ env.STAGE }} in ${{ matrix.region }}
     needs: build # Application Artifacts must be uploaded
-    name: Deploy to ${{ env.STAGE}} in ${{ matrix.region }}
     runs-on: ubuntu-latest
     env:
       STAGE: 'beta'
