@@ -33,7 +33,7 @@ jobs:
       
       - name: Deploy Bootstrap CFN Stack # Create Artifacts S3 Bucket
         run: |
-          REPOSITORY_NAME="$(echo '${{ github.repository }}' | tr '/' '-'"
+          REPOSITORY_NAME="$(echo '${{ github.repository }}' | tr '/' '-')"
           PIPELINE_BUCKET_NAME="$REPOSITORY_NAME-pipeline-bucket"
           STACK_NAME="$REPOSITORY_NAME-pipeline-bootstrap-stack"
           aws cloudformation deploy \
