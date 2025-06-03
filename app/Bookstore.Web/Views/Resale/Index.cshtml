@@ -8,7 +8,9 @@
     </h1>
 
     <div class="col-12 text-right">
-        @Html.ActionLink("Resell Book", "Create", "Resale", null, new { @class = "btn" })
+        <form asp-controller="Resale" asp-action="Create" method="get">
+            <button class="btn" name="id" type="submit">Resell Book</button>
+        </form>
     </div>
 
     <table class="table">

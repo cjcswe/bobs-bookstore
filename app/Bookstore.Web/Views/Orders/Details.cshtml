@@ -40,14 +40,16 @@
                         <img src="@book.ImageUrl" class="img-thumbnail" onerror="this.onerror=null;this.src='/images/default_c.jpg';" style="max-width: 75px;max-height: 75px;" />
                     </td>
                     <td>
-                        @Html.ActionLink(book.BookName, "Details", "Search", new { id = book.BookId }, null)
+                        <a asp-controller="Search" asp-action="Details" asp-route-id="@book.BookId">
+                            @book.BookName
+                        </a>
                     </td>
                     <td>$@book.Price</td>
                 </tr>
             }
             </tbody>
         </table>
-        
-        @Html.ActionLink("Back", "Index", null, new { @class="btn" })
+
+        <a class="btn" asp-action="Index">Back</a>
     </div>
 </div>

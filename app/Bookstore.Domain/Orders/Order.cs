@@ -1,16 +1,11 @@
 ﻿using Bookstore.Domain.Addresses;
 using Bookstore.Domain.Books;
 using Bookstore.Domain.Customers;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Bookstore.Domain.Orders
 {
     public class Order : Entity
     {
-        protected Order() { }
-
         public Order(int customerId, int addressId)
         {
             CustomerId = customerId;
@@ -25,7 +20,7 @@ namespace Bookstore.Domain.Orders
         public int AddressId { get; set; }
         public Address Address { get; set; }
 
-        public ICollection<OrderItem> OrderItems => orderItems;
+        public IEnumerable<OrderItem> OrderItems => orderItems;
 
         public DateTime DeliveryDate { get; set; } = DateTime.Now.AddDays(7);
 

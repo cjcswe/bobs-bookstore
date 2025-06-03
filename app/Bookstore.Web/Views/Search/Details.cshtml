@@ -64,8 +64,8 @@
 
             <div class="row">
                 <div class="col">
-                    @Html.ActionLink("Add to cart", "AddItemToShoppingCart", new { bookid = @Model.BookId }, new { @class = "btn" })
-                    @Html.ActionLink("Add to wishlist", "AddItemToWishlist", new { bookid = @Model.BookId }, new { @class = "btn" })
+                    <a class="btn" asp-action="AddItemToShoppingCart" asp-route-bookid="@Model.BookId">Add to cart</a>
+                    <a class="btn" asp-action="AddItemToWishlist" asp-route-bookid="@Model.BookId">Add to wishlist</a>
                 </div>
             </div>
         </div>

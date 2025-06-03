@@ -7,29 +7,26 @@ namespace Bookstore.Data.ImageResizeService
 {
     public class ImageResizeService : IImageResizeService
     {
-        public ImageResizeService() { }
-
         private const int BookCoverImageWidth = 400;
         private const int BookCoverImageHeight = 600;
 
         public async Task<Stream> ResizeImageAsync(Stream image)
         {
-            using (var magickImage = new MagickImage(image))
-            {
-                if (magickImage.BaseWidth == BookCoverImageWidth && magickImage.BaseHeight == BookCoverImageHeight) return image;
+            using var magickImage = new MagickImage(image);
 
-                var size = new MagickGeometry(BookCoverImageWidth, BookCoverImageHeight) { IgnoreAspectRatio = false };
+            if (magickImage.BaseWidth == BookCoverImageWidth && magickImage.BaseHeight == BookCoverImageHeight) return image;
 
-                magickImage.Resize(size);
+            var size = new MagickGeometry(BookCoverImageWidth, BookCoverImageHeight) { IgnoreAspectRatio = false };
 
-                var result = new MemoryStream();
+            magickImage.Resize(size);
 
-                await magickImage.WriteAsync(result);
+            var result = new MemoryStream();
 
-                result.Position = 0;
+            await magickImage.WriteAsync(result);
 
-                return result;
-            }
+            result.Position = 0;
+
+            return result;
         }
     }
 }

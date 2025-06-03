@@ -1,13 +1,11 @@
-﻿using System.Threading.Tasks;
-
-namespace Bookstore.Domain.Carts
+﻿namespace Bookstore.Domain.Carts
 {
     public interface IShoppingCartRepository
     {
-        Task AddAsync(ShoppingCart shoppingCart);
+        internal protected Task AddAsync(ShoppingCart shoppingCart);
 
-        Task<ShoppingCart> GetAsync(string correlationId);
+        internal protected Task<ShoppingCart> GetAsync(string correlationId);
 
-        Task SaveChangesAsync();
+        internal protected Task SaveChangesAsync();
     }
 }

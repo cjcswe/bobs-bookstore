@@ -1,6 +1,0 @@
-C:\Users\Administrator\source\repos\BobBookStoreYuetian\app\Bookstore.Domain\bin\Debug\Bookstore.Domain.dll
-C:\Users\Administrator\source\repos\BobBookStoreYuetian\app\Bookstore.Domain\bin\Debug\Bookstore.Domain.pdb
-C:\Users\Administrator\source\repos\BobBookStoreYuetian\app\Bookstore.Domain\obj\Debug\Bookstore.Domain.csproj.AssemblyReference.cache
-C:\Users\Administrator\source\repos\BobBookStoreYuetian\app\Bookstore.Domain\obj\Debug\Bookstore.Domain.csproj.CoreCompileInputs.cache
-C:\Users\Administrator\source\repos\BobBookStoreYuetian\app\Bookstore.Domain\obj\Debug\Bookstore.Domain.dll
-C:\Users\Administrator\source\repos\BobBookStoreYuetian\app\Bookstore.Domain\obj\Debug\Bookstore.Domain.pdb

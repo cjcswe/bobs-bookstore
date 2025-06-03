@@ -1,9 +1,6 @@
 ﻿using Bookstore.Domain;
 using Bookstore.Domain.Books;
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Data.Entity;
+using Microsoft.EntityFrameworkCore;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -13,18 +10,18 @@ namespace Bookstore.Data.Repositories
     {
         private readonly ApplicationDbContext dbContext;
 
-        public BookRepository()
+        public BookRepository(ApplicationDbContext dbContext)
         {
-            this.dbContext = ApplicationDbContext.GetDbContext();
+            this.dbContext = dbContext;
         }
 
         async Task<Book> IBookRepository.GetAsync(int id)
         {
             return await dbContext.Book
-                .Include("Genre")
-                .Include("Publisher")
-                .Include("BookType")
-                .Include("Condition")
+                .Include(x => x.Genre)
+                .Include(y => y.Publisher)
+                .Include(x => x.BookType)
+                .Include(x => x.Condition)
                 .SingleAsync(x => x.Id == id);
         }
 
@@ -91,26 +88,15 @@ namespace Bookstore.Data.Repositories
                                          x.BookType.Text.Contains(searchString) ||
                                          x.ISBN.Contains(searchString) ||
                                          x.Publisher.Text.Contains(searchString));
-            };
-
-            switch (sortBy)
-            {
-                case "Name":
-                    query = query.OrderBy(x => x.Name);
-                    break;
-
-                case "PriceAsc":
-                    query = query.OrderBy(x => x.Price);
-                    break;
-
-                case "PriceDesc":
-                    query = query.OrderByDescending(x => x.Price);
-                    break;
-
-                default:
-                    query.OrderBy(x => x.Name);
-                    break;
             }
+
+            query = sortBy switch
+            {
+                "Name" => query.OrderBy(x => x.Name),
+                "PriceAsc" => query.OrderBy(x => x.Price),
+                "PriceDesc" => query.OrderByDescending(x => x.Price),
+                _ => query.OrderBy(x => x.Name),
+            };
 
             var result = new PaginatedList<Book>(query, pageIndex, pageSize);
 
@@ -121,7 +107,7 @@ namespace Bookstore.Data.Repositories
 
         async Task IBookRepository.AddAsync(Book book)
         {
-            await Task.Run(() => dbContext.Book.Add(book));
+            await dbContext.AddAsync(book);
         }
 
         async Task IBookRepository.UpdateAsync(Book book)
@@ -147,7 +133,7 @@ namespace Bookstore.Data.Repositories
                 .GroupBy(x => 1)
                 .Select(x => new BookStatistics
                 {
-                    LowStock = x.Count(y => y.Quantity > 0 && y.Quantity < Book.LowBookThreshold),
+                    LowStock = x.Count(y => y.Quantity > 0 && y.Quantity <= Book.LowBookThreshold),
                     OutOfStock = x.Count(y => y.Quantity == 0),
                     StockTotal = x.Count()
                 }).SingleOrDefaultAsync();

@@ -8,16 +8,11 @@
 
     <ItemGroup>
         <!-- CDK Construct Library dependencies -->
-        <PackageReference Include="Amazon.CDK.Lib" Version="2.102.0" />
-        <PackageReference Include="Cdklabs.CdkNag" Version="2.27.158" />
-        <PackageReference Include="Constructs" Version="10.3.0" />
+        <PackageReference Include="Amazon.CDK.Lib" Version="2.130.0" />
+        <PackageReference Include="Constructs" Version="10.1.*" />
 
         <PackageReference Include="Amazon.Jsii.Analyzers" Version="*" PrivateAssets="all" />
         
-    </ItemGroup>
-
-    <ItemGroup>
-      <ProjectReference Include="..\Bookstore.Common\Bookstore.Common.csproj" />
     </ItemGroup>
 
 </Project>

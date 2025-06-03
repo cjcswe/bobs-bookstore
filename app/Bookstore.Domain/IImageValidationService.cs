@@ -1,10 +1,7 @@
-﻿using System.IO;
-using System.Threading.Tasks;
-
-namespace Bookstore.Domain
+﻿namespace Bookstore.Domain
 {
     public interface IImageValidationService
     {
-        Task<bool> IsSafeAsync(Stream image);
+        public Task<bool> IsSafeAsync(Stream? image);
     }
 }

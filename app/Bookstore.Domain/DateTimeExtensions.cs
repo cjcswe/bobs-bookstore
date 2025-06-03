@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Bookstore.Domain
+﻿namespace Bookstore.Domain
 {
     public static class DateTimeExtensions
     {

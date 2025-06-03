@@ -12,9 +12,10 @@ on:
 
 env:
   AWS_REGION: 'us-west-1'
-  ARTIFACT_NAME: 'Bookstore.Web'
-  APPLICATION_NAME: 'bobs-bookstore'
+  REPOSITORY_NAME: ''
   BUCKET_NAME: ''
+  ARTIFACT_NAME: 'Bookstore.Web'
+  ARTIFACT_PATH: ''
 
 jobs:
   bootstrap:
@@ -32,12 +33,14 @@ jobs:
       
       - name: Deploy Bootstrap CFN Stack # Create Artifacts S3 Bucket
         run: |
-          PIPELINE_BUCKET_NAME="$(echo '${{ github.repository }}' | tr '/' '-')-pipeline-bucket"
-          STACK_NAME="$(echo '${{ github.repository }}' | tr '/' '-')pipeline-bootstrap-stack"
+          REPOSITORY_NAME="$(echo '${{ github.repository }}' | tr '/' '-'"
+          PIPELINE_BUCKET_NAME="$REPOSITORY_NAME-pipeline-bucket"
+          STACK_NAME="$REPOSITORY_NAME-pipeline-bootstrap-stack"
           aws cloudformation deploy \
             --template-file pipeline/infrastructure/bootstrap.yaml \
             --stack-name $STACK_NAME \
             --parameter-overrides PipelineBucketName=$PIPELINE_BUCKET_NAME
+          echo "REPOSITORY_NAME=$REPOSITORY_NAME" >> $GITHUB_ENV
           echo "BUCKET_NAME=$PIPELINE_BUCKET_NAME" >> $GITHUB_ENV
 
   build:
@@ -108,14 +111,14 @@ jobs:
         run: |
           aws cloudformation deploy \
             --template-file pipeline/infra/application.yaml \
-            --stack-name "${{ env.APPLICATION_NAME }}-${{ matrix.region }}" \
+            --stack-name "${{ env.REPOSITORY_NAME }}-${{ matrix.region }}" \
             --parameter-overrides ArtifactS3Bucket=${{ env.BUCKET_NAME }} \
             --capabilities CAPABILITY_NAMED_IAM
 
       - name: Deploy Application
         run: | 
           INSTANCE_ID=$(aws cloudformation describe-stacks \ 
-            --stack-name "${{ env.APPLICATION_NAME }}-${{ matrix.region }}" \
+            --stack-name "${{ env.REPOSITORY_NAME }}-${{ matrix.region }}" \
             --query "Stacks[0].Outputs[?OutputKey=='EC2InstanceId'].OutputValue" \
             --output text)
             

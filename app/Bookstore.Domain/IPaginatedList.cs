@@ -1,7 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
-
-namespace Bookstore.Domain
+﻿namespace Bookstore.Domain
 {
     public interface IPaginatedList<T> : IList<T>
     {
@@ -16,5 +13,7 @@ namespace Bookstore.Domain
         Task PopulateAsync();
 
         IEnumerable<int> GetPageList(int count);
+
+        IPaginatedList<TConvertTo> ConvertTo<TConvertTo>(Func<T, TConvertTo> expression);
     }
 }

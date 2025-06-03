@@ -65,8 +65,8 @@
                                             @Html.DisplayFor(modelItem => item.ZipCode)
                                         </td>
                                         <td>
-                                            @Html.ActionLink("Edit", "Update", "Address", new { id = item.Id, returnUrl = Url.Action() }, null) |
-                                            <a href data-bs-toggle="modal" data-bs-target="#confirmDeleteModal" data-addressId="@item.Id">Delete</a>
+                                            <a asp-action="Update" asp-route-id="@item.Id" asp-route-returnUrl="@Url.Action()">Edit</a> |
+                                            <a asp-action="Delete" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal" data-addressId="@item.Id">Delete</a>
                                         </td>
                                     </tr>
                                 }
@@ -90,7 +90,7 @@
                 </div>
                 <div class="modal-footer">
                     <form method="post">
-                        <button id="confirmDeleteButton" type="submit" class="btn btn-primary" formaction="@Url.Action("Delete")">Yes, Delete</button>
+                        <button id="confirmDeleteButton" type="submit" class="btn btn-primary" asp-action="Delete">Yes, Delete</button>
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No, Don't Delete</button>
                     </form>
                 </div>
@@ -104,7 +104,7 @@
 
                 $('#confirmDeleteModal').on('show.bs.modal', function (event) {
                     var modal = $(this);
-                    var formAction = modal.find('#confirmDeleteButton')[0].formAction;
+                    var formAction = modal.find('#confirmDeleteButton').attr("formaction");
                     var addressId = $(event.relatedTarget).data('addressid');
 
                     modal.find('#confirmDeleteButton').attr("formaction", formAction + "?id=" + addressId);

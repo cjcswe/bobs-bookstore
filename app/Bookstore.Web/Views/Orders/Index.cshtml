@@ -15,44 +15,43 @@
     {
         <table class="table table-hover mt-5">
             <thead>
-                <tr>
-                    <th>
-                        Total Cost
-                    </th>
-                    <th>
-                        Delivery Date
-                    </th>
-                    <th>
-                        Status
-                    </th>
-                    <th></th>
-                </tr>
+            <tr>
+                <th>
+                    Total Cost
+                </th>
+                <th>
+                    Delivery Date
+                </th>
+                <th>
+                    Status
+                </th>
+                <th></th>
+            </tr>
             </thead>
             <tbody>
-                @foreach (var item in Model.OrderItems)
-                {
-                    <tr>
-                        <td>
-                            @item.SubTotal.ToString("C")
-                        </td>
-                        <td>
-                            @item.DeliveryDate.ToShortDateString()
-                        </td>
-                        <td>
-                            @item.OrderStatus
-                        </td>
-                        <td>
-                            <div class="hstack gap-2">
-                                @Html.ActionLink("Details", "Details", "Orders", new { id = item.Id }, new { @class = "btn" })
+            @foreach (var item in Model.OrderItems)
+            {
+                <tr>
+                    <td>
+                        @item.SubTotal.ToString("C")
+                    </td>
+                    <td>
+                        @item.DeliveryDate.ToShortDateString()
+                    </td>
+                    <td>
+                        @item.OrderStatus
+                    </td>
+                    <td>
+                        <div class="hstack gap-2">
+                            <a class="btn" asp-action="Details" asp-controller="Orders" asp-route-id="@item.Id">Details</a>
 
-                                @using (Html.BeginForm("Delete", "Orders", new { id = item.Id }))
-                                {
-                                    <button type="submit" class="btn">Cancel</button>
-                                }
-                            </div>
-                        </td>
-                    </tr>
-                }
+                            <form method="post">
+                                <button type="submit" class="btn" asp-action="Delete" asp-route-id="@item.Id">Cancel</button>
+                            </form>
+                        </div>                        
+                    </td>
+                </tr>
+            }
             </tbody>
         </table>
     }

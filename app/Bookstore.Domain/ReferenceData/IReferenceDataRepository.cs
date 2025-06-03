@@ -1,18 +1,15 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
-
-namespace Bookstore.Domain.ReferenceData
+﻿namespace Bookstore.Domain.ReferenceData
 {
     public interface IReferenceDataRepository
     {
-        Task<IEnumerable<ReferenceDataItem>> FullListAsync();
+        internal protected Task<IEnumerable<ReferenceDataItem>> FullListAsync();
 
-        Task<IPaginatedList<ReferenceDataItem>> ListAsync(ReferenceDataFilters filters, int pageIndex, int pageSize);
+        internal protected Task<IPaginatedList<ReferenceDataItem>> ListAsync(ReferenceDataFilters filters, int pageIndex, int pageSize);
 
-        Task<ReferenceDataItem> GetAsync(int id);
+        internal protected Task<ReferenceDataItem> GetAsync(int id);
 
-        Task AddAsync(ReferenceDataItem item);
+        internal protected Task AddAsync(ReferenceDataItem item);
 
-        Task SaveChangesAsync();
+        internal protected Task SaveChangesAsync();
     }
 }

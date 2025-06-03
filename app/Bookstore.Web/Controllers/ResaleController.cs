@@ -1,12 +1,9 @@
 ﻿using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
 using Bookstore.Web.ViewModel.Resale;
 using Bookstore.Web.Helpers;
 using Bookstore.Domain.Offers;
 using Bookstore.Domain.ReferenceData;
-using System.Web.Mvc;
-using Bookstore.Data.Offers;
-using Bookstore.Data.ReferenceData;
-using Bookstore.Data;
 
 namespace Bookstore.Web.Controllers
 {
@@ -15,20 +12,20 @@ namespace Bookstore.Web.Controllers
         private readonly IReferenceDataService referenceDataService;
         private readonly IOfferService offerService;
 
-        public ResaleController()
+        public ResaleController(IReferenceDataService referenceDataService, IOfferService offerService)
         {
-            this.referenceDataService = InstanceCreator.GetReferenceDataService();
-            this.offerService = InstanceCreator.GetOfferService();
+            this.referenceDataService = referenceDataService;
+            this.offerService = offerService;
         }
 
-        public async Task<ActionResult> Index()
+        public async Task<IActionResult> Index()
         {
             var offers = await offerService.GetOffersAsync(User.GetSub());
 
             return View(new ResaleIndexViewModel(offers));
         }
 
-        public async Task<ActionResult> Create()
+        public async Task<IActionResult> Create()
         {
             var referenceDataDtos = await referenceDataService.GetAllReferenceDataAsync();
 
@@ -36,7 +33,7 @@ namespace Bookstore.Web.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult> Create(ResaleCreateViewModel resaleViewModel)
+        public async Task<IActionResult> Create(ResaleCreateViewModel resaleViewModel)
         {
             if (!ModelState.IsValid) return View();
 

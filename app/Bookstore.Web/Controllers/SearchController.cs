@@ -1,12 +1,10 @@
 ﻿using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Bookstore.Web.Helpers;
 using Bookstore.Domain.Books;
 using Bookstore.Domain.Carts;
 using Bookstore.Web.ViewModel.Search;
-using System.Web.Mvc;
-using Bookstore.Data.Books;
-using Bookstore.Data.Carts;
-using Bookstore.Data;
 
 namespace Bookstore.Web.Controllers
 {
@@ -16,27 +14,27 @@ namespace Bookstore.Web.Controllers
         private readonly IBookService inventoryService;
         private readonly IShoppingCartService shoppingCartService;
 
-        public SearchController()
+        public SearchController(IBookService inventoryService, IShoppingCartService shoppingCartService)
         {
-            this.inventoryService = InstanceCreator.GetBookService();
-            this.shoppingCartService = InstanceCreator.GetShoppingCartService();
+            this.inventoryService = inventoryService;
+            this.shoppingCartService = shoppingCartService;
         }
 
-        public async Task<ActionResult> Index(string searchString, string sortBy = "Name", int pageIndex = 1, int pageSize = 10)
+        public async Task<IActionResult> Index(string searchString, string sortBy = "Name", int pageIndex = 1, int pageSize = 10)
         {
             var books = await inventoryService.GetBooksAsync(searchString, sortBy, pageIndex, pageSize);
 
             return View(new SearchIndexViewModel(books));
         }
 
-        public async Task<ActionResult> Details(int id)
+        public async Task<IActionResult> Details(int id)
         {
             var book = await inventoryService.GetBookAsync(id);
 
             return View(new SearchDetailsViewModel(book));
         }
 
-        public async Task<ActionResult> AddItemToShoppingCart(int bookId)
+        public async Task<IActionResult> AddItemToShoppingCart(int bookId)
         {
             var dto = new AddToShoppingCartDto(HttpContext.GetShoppingCartCorrelationId(), bookId, 1);
 
@@ -47,7 +45,7 @@ namespace Bookstore.Web.Controllers
             return RedirectToAction("Index", "Search");
         }
 
-        public async Task<ActionResult> AddItemToWishlist(int bookId)
+        public async Task<IActionResult> AddItemToWishlist(int bookId)
         {
             var dto = new AddToWishlistDto(HttpContext.GetShoppingCartCorrelationId(), bookId);
 

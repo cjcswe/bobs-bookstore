@@ -1,13 +1,8 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-
-namespace Bookstore.Domain.Carts
+﻿namespace Bookstore.Domain.Carts
 {
     public class ShoppingCart : Entity
     {
-        protected ShoppingCart() { }
-
-        public List<ShoppingCartItem> ShoppingCartItems { get; private set; } = new List<ShoppingCartItem>();
+        public List<ShoppingCartItem> ShoppingCartItems { get; private set; } = new();
 
         public string CorrelationId { get; set; }
 

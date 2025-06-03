@@ -1,5 +1,4 @@
 ﻿using Bookstore.Domain;
-using System.Configuration;
 using System.IO;
 using System.Threading.Tasks;
 
@@ -9,9 +8,9 @@ namespace Bookstore.Data.FileServices
     {
         private readonly string webRootPath;
 
-        public LocalFileService()
+        public LocalFileService(string webRootPath)
         {
-            this.webRootPath = ConfigurationManager.AppSettings["Services/FileService"];
+            this.webRootPath = webRootPath;
         }
 
         // The interface defines an async operation, however System.IO.File
@@ -27,19 +26,18 @@ namespace Bookstore.Data.FileServices
         {
             if (file == null) return null;
 
-            var imageFolder = Path.Combine(webRootPath, "images", "coverimages");
+            var imageFolder = Path.Combine(webRootPath, "images/coverimages");
             var uniqueFilename = $"{Path.GetFileNameWithoutExtension(Path.GetRandomFileName())}{Path.GetExtension(filename)}";
 
             if (!Directory.Exists(imageFolder)) Directory.CreateDirectory(imageFolder);
 
-            using (var filestream = new FileStream(Path.Combine(imageFolder, uniqueFilename), FileMode.OpenOrCreate))
-            {
-                await file.CopyToAsync(filestream);
+            using var filestream = new FileStream(Path.Combine(imageFolder, uniqueFilename), FileMode.OpenOrCreate);
 
-                await filestream.FlushAsync();
+            await file.CopyToAsync(filestream);
 
-                return $"/Content/images/coverimages/{uniqueFilename}";
-            }
+            await filestream.FlushAsync();
+
+            return $"/images/coverimages/{uniqueFilename}";
         }
     }
 }

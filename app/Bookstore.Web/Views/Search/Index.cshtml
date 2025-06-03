@@ -4,14 +4,14 @@
 }
 
 <div class="panel-body">
-    @Html.Partial("_Notification")
+    <partial name="_Notification" />
 
     <h2 class="mb-3">Search for Books</h2>
-
+    
     <form asp-controller="Search" asp-action="Index" method="get">
         <div class="row">
             <div class="col-7">
-                <input class="form-control" type="text" name="SearchString" asp-for="SearchString"/>
+                <input class="form-control" type="text" name="SearchString" asp-for="SearchString" />
             </div>
 
             <div class="col-4">
@@ -46,8 +46,8 @@
                         {
                             <div class="col-md-3">
                                 <div class="item text-center">
-                                    <a href="@Url.Action("Details", "Search", new { id = item.BookId })">
-                                        <img src="@item.ImageUrl" alt="img" class="book_image_size" onerror="this.onerror=null;this.src='/images/default_c.jpg';" style="width: 135px;height: 200px;">
+                                    <a asp-controller="Search" asp-action="Details" asp-route-id="@item.BookId">
+                                        <img src="@Html.DisplayFor(modelItem => item.ImageUrl)" alt="img" class="book_image_size" onerror="this.onerror=null;this.src='/images/default_c.jpg';" style="width: 135px;height: 200px;">
                                     </a>
 
                                     <center>
@@ -74,7 +74,7 @@
                 </div>
 
                 <div>
-                    @Html.Partial("_Paginator")
+                    <partial name="_paginator" />
                 </div>
             </div>
         </section>
