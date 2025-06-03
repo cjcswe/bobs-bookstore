@@ -49,7 +49,7 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: ${{.dotnet-version}}
-      
+
       - name: Build for Linux
         run: |
           dotnet restore
@@ -63,7 +63,7 @@ jobs:
             --output ${{github.workspace}}/publish --no-build
           
          Compress-Archive -Path "${{ github.workspace }}/publish/*" -DestinationPath "${{ github.workspace }}/${{ env.ARTIFACT_NAME }}.zip"
-          
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -82,13 +82,13 @@ jobs:
     runs-on: ubuntu-latest
     env:
       STAGE: 'beta'
-    
+
     strategy: # Support multiple deployment environments
       matrix:
         include:
           - region: {{.depl-env-region}}
           # Add more regions as necessary
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -107,7 +107,7 @@ jobs:
             --stack-name "${{ env.APPLICATION_NAME }}-${{ env.STAGE }}-${{ matrix.region }}" \
             --parameter-overrides ArtifactS3Bucket=${{ env.BUCKET_NAME }} \
             --capabilities CAPABILITY_NAMED_IAM
-            
+
       - name: Deploy Application
         run: | 
           INSTANCE_ID=$(aws cloudformation describe-stacks \ 
@@ -138,9 +138,9 @@ jobs:
               --output text
             exit 1
           fi;
-            
+
       - name: Execute Integration Tests
         run: |
           echo "Integration tests are blank. Please create them and restart workflow."
-            
+
   # Add additional deployment jobs for different stages
