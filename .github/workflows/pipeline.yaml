@@ -42,7 +42,7 @@ jobs:
               --stack-name $STACK_NAME \
               --parameter-overrides PipelineBucketName=$BUCKET_NAME
           fi
-          echo "bucket_name=$BUCKET_NAME" >> $GITHUB_OUTPUT
+          echo "BUCKET_NAME=$BUCKET_NAME" >> $GITHUB_OUTPUT
 
   build:
     needs: bootstrap # Pipeline Bucket must exist
@@ -117,7 +117,7 @@ jobs:
           STACK_NAME="$(echo '${{ github.repository }}' | tr '/' '-')-${{ matrix.region }}"
           aws cloudformation deploy \
             --template-file pipeline/infra/application.yaml \
-            --stack-name $STACK_NAME" \
+            --stack-name $STACK_NAME \
             --parameter-overrides ArtifactS3Bucket=${{ needs.bootstrap.outputs.BUCKET_NAME }} \
             --capabilities CAPABILITY_NAMED_IAM
           echo "STACK_NAME=$STACK_NAME" >> $GITHUB_ENV
