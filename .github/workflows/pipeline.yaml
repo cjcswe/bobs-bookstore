@@ -173,7 +173,7 @@ jobs:
             --query "Status" \
             --output text)
 
-          if [ "$STATUS" -ne "Success" ]; then
+          if [ "$STATUS" != "Success" ]; then
             echo "Failed to start the application"
             exit 1
           fi;
