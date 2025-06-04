@@ -17,7 +17,7 @@ jobs:
   bootstrap:
     runs-on: ubuntu-latest
     outputs:
-      BUCKET_NAME: ${{ steps.deploy_stack.outputs.BUCKET_NAME }}
+      bucket_name: ${{ steps.deploy_stack.outputs.bucket_name }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -29,7 +29,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
       
-      - name: Deploy Bootstrap CFN Stack # Create Artifacts S3 Bucket
+      - name: Deploy Bootstrap CFN Stack and Set Artifacts S3 Bucket Name
         id: deploy_stack
         run: |
           BUCKET_NAME="${{ env.BUCKET_NAME }}"
@@ -42,13 +42,13 @@ jobs:
               --stack-name $STACK_NAME \
               --parameter-overrides PipelineBucketName=$BUCKET_NAME
           fi
-          echo "BUCKET_NAME=$BUCKET_NAME" >> $GITHUB_OUTPUT
+          echo "bucket_name=$BUCKET_NAME" >> $GITHUB_OUTPUT
 
   build:
-    needs: bootstrap # Pipeline Bucket must exist
+    needs: bootstrap
     runs-on: ubuntu-latest
     outputs:
-      ARTIFACT_PATH: ${{ steps.upload_artifacts.outputs.ARTIFACT_PATH }}
+      artifact_path: ${{ steps.upload_artifacts.outputs.artifact_path }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -86,11 +86,11 @@ jobs:
         run: |
           ARTIFACT_PATH="${{ github.sha }}-${{ env.ARTIFACT_NAME }}.zip"
           aws s3 cp "${{ github.workspace }}/${{ env.ARTIFACT_NAME }}.zip" "s3://${{ needs.bootstrap.outputs.bucket_name }}/$ARTIFACT_PATH"
-          echo "ARTIFACT_PATH=$ARTIFACT_PATH" >> $GITHUB_OUTPUT
+          echo "artifact_path=$ARTIFACT_PATH" >> $GITHUB_OUTPUT
 
   deploy:
     name: Deploy to ${{ matrix.region }}
-    needs: build # Application Artifacts must be uploaded
+    needs: [bootstrap, build]
     runs-on: ubuntu-latest
 
     strategy: # Support multiple deployment environments
@@ -116,7 +116,7 @@ jobs:
           aws cloudformation deploy \
             --template-file pipeline/infra/application.yaml \
             --stack-name $STACK_NAME \
-            --parameter-overrides ArtifactS3Bucket=${{ needs.bootstrap.outputs.BUCKET_NAME }} \
+            --parameter-overrides ArtifactS3Bucket=${{ needs.bootstrap.outputs.bucket_name }} \
             --capabilities CAPABILITY_NAMED_IAM
           echo "STACK_NAME=$STACK_NAME" >> $GITHUB_ENV
 
@@ -133,7 +133,7 @@ jobs:
             --comment "Download and start application" \
             --parameters "{
               \"commands\": "echo 'hello';",
-              \"artifactUri\": [\"s3://${{ needs.bootstrap.outputs.BUCKET_NAME }}/${{ needs.build.outputs.ARTIFACT_PATH }}\"]
+              \"artifactUri\": [\"s3://${{ needs.bootstrap.outputs.bucket_name }}/${{ needs.build.outputs.artifact_path }}\"]
             }" \
             --query "Command.CommandId" \ 
             --output text)
