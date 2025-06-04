@@ -132,8 +132,8 @@ jobs:
 
       - name: Deploy Application
         run: |
-          echo "Sending application startup commands to EC2..."
           INSTANCE_ID="${{ env.INSTANCE_ID }}"
+          echo "Sending application startup commands to $INSTANCE_ID..."
           COMMAND_ID=$(aws ssm send-command \
             --instance-ids $INSTANCE_ID \
             --document-name "AWS-RunShellScript" \
@@ -141,8 +141,7 @@ jobs:
             --parameters "{
               \"commands\": [
                 \"echo Starting...\",
-                \"echo s3://${{ needs.bootstrap.outputs.bucket_name }}/${{ needs.build.outputs.artifact_path }}\",
-                \"exit 1\"
+                \"echo s3://${{ needs.bootstrap.outputs.bucket_name }}/${{ needs.build.outputs.artifact_path }}\"
               ]
             }" \
             --query "Command.CommandId" \
