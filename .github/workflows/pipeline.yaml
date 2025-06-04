@@ -144,7 +144,7 @@ jobs:
                 \"echo s3://${{ needs.bootstrap.outputs.bucket_name }}/${{ needs.build.outputs.artifact_path }}\"
               ]
             }" \
-            --query "Command.CommandId" \ 
+            --query "Command.CommandId" \
             --output text)
           
           echo "Waiting for commands to finish. CommandId: $COMMAND_ID"
