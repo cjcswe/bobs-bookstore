@@ -127,7 +127,7 @@ jobs:
               --query "Stacks[0].Outputs[?OutputKey=='EC2InstanceId'].OutputValue" \
               --output text)
           fi
-          "Target EC2 InstanceId: $INSTANCE_ID"
+          echo "Target EC2 InstanceId: $INSTANCE_ID"
           echo "INSTANCE_ID=$INSTANCE_ID" >> $GITHUB_ENV
 
       - name: Deploy Application
