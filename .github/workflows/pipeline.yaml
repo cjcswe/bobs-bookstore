@@ -141,7 +141,8 @@ jobs:
             --parameters "{
               \"commands\": [
                 \"echo Starting...\",
-                \"echo s3://${{ needs.bootstrap.outputs.bucket_name }}/${{ needs.build.outputs.artifact_path }}\"
+                \"echo s3://${{ needs.bootstrap.outputs.bucket_name }}/${{ needs.build.outputs.artifact_path }}\",
+                \"exit 1\"
               ]
             }" \
             --query "Command.CommandId" \
