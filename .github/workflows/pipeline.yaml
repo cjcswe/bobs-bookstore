@@ -162,11 +162,11 @@ jobs:
                 'Status: ' + Status,
                 '--------',
                 'STDOUT: ',
-                StandardOutputContent,
+                StandardOutputContent || 'N/A',
                 '--------',
-                'STDERR: '.
-                StandardErrorContent
-                '--------',
+                'STDERR: ',
+                StandardErrorContent || 'N/A',
+                '--------'
               ]" \
               --output text
 
