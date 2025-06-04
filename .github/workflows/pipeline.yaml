@@ -68,7 +68,6 @@ jobs:
         run: |
           dotnet publish ./app/Bookstore.Web/Bookstore.Web.csproj \
             --configuration Release \
-            --self-contained true \
             --output ${{ github.workspace }}/publish \
             --no-build
 
