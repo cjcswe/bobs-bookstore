@@ -46,7 +46,7 @@ jobs:
 
   build:
     needs: bootstrap # Pipeline Bucket must exist
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     outputs:
       ARTIFACT_PATH: ${{ steps.upload_artifacts.outputs.ARTIFACT_PATH }}
     steps:
@@ -59,22 +59,21 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore dependencies
-        run: dotnet restore ./app/Bookstore.Web/Bookstore.Web.csproj --runtime linux-x64
+        run: dotnet restore ./app/Bookstore.Web/Bookstore.Web.csproj
 
       - name: Build project
-        run: dotnet build ./app/Bookstore.Web/Bookstore.Web.csproj --configuration Release --runtime linux-x64 --no-restore
+        run: dotnet build ./app/Bookstore.Web/Bookstore.Web.csproj --configuration Release --no-restore
 
       - name: Publish for Linux
         run: |
-          dotnet publish ./app/Bookstore.Web/Bookstore.Web.csproj `
-            --configuration Release `
-            --runtime linux-x64 `
-            --self-contained true `
-            --output ${{ github.workspace }}/publish `
+          dotnet publish ./app/Bookstore.Web/Bookstore.Web.csproj \
+            --configuration Release \
+            --self-contained true \
+            --output ${{ github.workspace }}/publish \
             --no-build
 
       - name: Compress artifacts
-        run: Compress-Archive -Path "${{ github.workspace }}/publish/*" -DestinationPath "${{ github.workspace }}/${{ env.ARTIFACT_NAME }}.zip"
+        run: cd ${{ github.workspace }}/publish && zip -r ../${{ env.ARTIFACT_NAME }}.zip .
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -86,9 +85,9 @@ jobs:
       - name: Upload Artifacts to Pipeline Bucket
         id: upload_artifacts
         run: |
-          $ARTIFACT_PATH = "${{ github.sha }}-${{ env.ARTIFACT_NAME }}.zip"
-          aws s3 cp "${{ github.workspace }}/${{ env.ARTIFACT_NAME }}.zip" "s3://${{ needs.bootstrap.outputs.BUCKET_NAME }}/$ARTIFACT_PATH"
-          echo "ARTIFACT_PATH=$ARTIFACT_PATH" >> $env:GITHUB_OUTPUT
+          ARTIFACT_PATH="${{ github.sha }}-${{ env.ARTIFACT_NAME }}.zip"
+          aws s3 cp "${{ github.workspace }}/${{ env.ARTIFACT_NAME }}.zip" "s3://${{ needs.bootstrap.outputs.bucket_name }}/$ARTIFACT_PATH"
+          echo "ARTIFACT_PATH=$ARTIFACT_PATH" >> $GITHUB_OUTPUT
 
   deploy:
     name: Deploy to ${{ matrix.region }}
