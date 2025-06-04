@@ -6,7 +6,7 @@ on:
       - 'main'
   schedule: # Weekly at 00:00 UTC on Monday
     - cron: '0 0 * * 1' 
-  workflow_dispatch: # Allow manual triggering 
+  #workflow_dispatch: # Allow manual triggering 
 
 env:
   AWS_REGION: 'us-west-1'
@@ -133,7 +133,7 @@ jobs:
       - name: Deploy Application
         run: |
           INSTANCE_ID="${{ env.INSTANCE_ID }}"
-          echo "Sending application startup commands to $INSTANCE_ID..."
+          echo "Sending application startup commands to target. InstanceId: $INSTANCE_ID..."
           COMMAND_ID=$(aws ssm send-command \
             --instance-ids $INSTANCE_ID \
             --document-name "AWS-RunShellScript" \
@@ -173,7 +173,7 @@ jobs:
             echo "Application startup failed"
             exit 1
           fi;
-          echo "Application startup succeeded"
+          echo "Application startup succeeded!"
 
       - name: Execute Integration Tests
         run: |
