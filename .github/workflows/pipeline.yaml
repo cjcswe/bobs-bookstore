@@ -17,6 +17,9 @@ jobs:
     outputs:
       bucket_name: ${{ steps.deploy_stack.outputs.bucket_name }}
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -95,6 +98,9 @@ jobs:
             instance_id: 'i-0ecac04f5ddbc3bf7' # Override Creation
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
