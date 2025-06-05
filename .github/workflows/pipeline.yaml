@@ -36,7 +36,7 @@ jobs:
             BUCKET_NAME="$REPOSITORY_NAME-pipeline-bucket"
             STACK_NAME="$REPOSITORY_NAME-pipeline-bootstrap-stack"
             aws cloudformation deploy \
-              --template-file pipeline/infrastructure/bootstrap.yaml \
+              --template-file atx-pipeline/infrastructure/bootstrap.yaml \
               --stack-name $STACK_NAME \
               --parameter-overrides PipelineBucketName=$BUCKET_NAME
           fi
@@ -115,7 +115,7 @@ jobs:
             echo "Deploying Application Infrastructure..."
             STACK_NAME="$(echo '${{ github.repository }}' | tr '/' '-')-${{ matrix.region }}"
             aws cloudformation deploy \
-              --template-file pipeline/infra/application.yaml \
+              --template-file atx-pipeline/infra/application.yaml \
               --stack-name $STACK_NAME \
               --parameter-overrides ArtifactS3Bucket=${{ needs.bootstrap.outputs.bucket_name }} \
               --capabilities CAPABILITY_NAMED_IAM
