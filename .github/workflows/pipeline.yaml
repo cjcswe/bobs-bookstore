@@ -148,7 +148,6 @@ jobs:
             --parameters '{
               "commands": '"$COMMANDS"',
               "S3_URI": "s3://${{ needs.bootstrap.outputs.bucket_name }}/${{ needs.build.outputs.artifact_path }}"
-              ]
             }' \
             --query "Command.CommandId" \
             --output text)
