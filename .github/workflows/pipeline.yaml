@@ -132,7 +132,7 @@ jobs:
         run: |
           INSTANCE_ID="${{ env.INSTANCE_ID }}"
           COMMANDS="["
-          while IFS= read -r line; do COMMANDS+="\"$line\"," done < atx-pipeline/scripts/startup.sh
+          while IFS= read -r line; do COMMANDS+="\"${line%$'\r'}\","; done < atx-pipeline/scripts/startup.sh
           COMMANDS="${COMMANDS%,}]"
 
           echo "Sending application startup commands to target. InstanceId: $INSTANCE_ID..."
