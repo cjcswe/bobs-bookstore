@@ -134,6 +134,7 @@ jobs:
           COMMANDS="["
           while IFS= read -r line; do COMMANDS+="\"${line%$'\r'}\","; done < atx-pipeline/scripts/startup.sh
           COMMANDS="${COMMANDS%,}]"
+          echo "$COMMANDS"
 
           echo "Sending application startup commands to target. InstanceId: $INSTANCE_ID..."
           COMMAND_ID=$(aws ssm send-command \
@@ -141,7 +142,10 @@ jobs:
             --document-name "AWS-RunShellScript" \
             --comment "Download and start application" \
             --parameters "{
-              \"commands\": $COMMANDS
+              \"commands\": $COMMANDS,
+              \"environmentVariables\": [{
+                \"S3_URI\": \"s3://${{ needs.bootstrap.outputs.bucket_name }}/${{ needs.build.outputs.artifact_path }}\",
+              }]
             }" \
             --query "Command.CommandId" \
             --output text)

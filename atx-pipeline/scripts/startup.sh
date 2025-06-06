@@ -1,2 +1,2 @@
-echo Starting...
-echo "s3://${{ needs.bootstrap.outputs.bucket_name }}/${{ needs.build.outputs.artifact_path }}"
+echo "Starting..."
+echo "S3 URI: $S3_URI"
