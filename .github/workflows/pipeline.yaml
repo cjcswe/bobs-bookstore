@@ -147,11 +147,7 @@ jobs:
             --comment "Download and start application" \
             --parameters '{
               "commands": '"$COMMANDS"',
-              "environmentVariables": [
-                {
-                  "name": "S3_URI",
-                  "value": "s3://${{ needs.bootstrap.outputs.bucket_name }}/${{ needs.build.outputs.artifact_path }}"
-                }
+              "S3_URI": "s3://${{ needs.bootstrap.outputs.bucket_name }}/${{ needs.build.outputs.artifact_path }}"
               ]
             }' \
             --query "Command.CommandId" \
