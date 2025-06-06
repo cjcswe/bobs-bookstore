@@ -131,8 +131,9 @@ jobs:
       - name: Deploy Application
         run: |
           INSTANCE_ID="${{ env.INSTANCE_ID }}"
+          S3_URI="s3://${{ needs.bootstrap.outputs.bucket_name }}/${{ needs.build.outputs.artifact_path }}""
 
-          COMMANDS="["
+          COMMANDS="[\"S3_URI=\"$S3_URI\"\","
           while IFS= read -r line; do 
             # Escape quotes and backslashes in the command
             escaped_line=$(printf '%s' "$line" | sed 's/\\/\\\\/g; s/"/\\"/g')
@@ -145,10 +146,7 @@ jobs:
             --instance-ids $INSTANCE_ID \
             --document-name "AWS-RunShellScript" \
             --comment "Download and start application" \
-            --parameters '{
-              "commands": '"$COMMANDS"',
-              "S3_URI": "s3://${{ needs.bootstrap.outputs.bucket_name }}/${{ needs.build.outputs.artifact_path }}"
-            }' \
+            --parameters '{"commands": '"$COMMANDS"'}' \
             --query "Command.CommandId" \
             --output text)
 
