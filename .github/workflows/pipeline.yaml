@@ -132,10 +132,9 @@ jobs:
         run: |
           INSTANCE_ID="${{ env.INSTANCE_ID }}"
           COMMANDS="["
-          while IFS= read -r line; do COMMANDS+="\"${line%$'\r'}\","; done < atx-pipeline/scripts/startup.sh
+          while IFS= read -r line; do COMMANDS+="'${line%$'\r'}',"; done < atx-pipeline/scripts/startup.sh
           COMMANDS="${COMMANDS%,}]"
           echo "$COMMANDS"
-
           echo "Sending application startup commands to target. InstanceId: $INSTANCE_ID..."
           COMMAND_ID=$(aws ssm send-command \
             --instance-ids $INSTANCE_ID \
