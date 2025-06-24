@@ -48,6 +48,6 @@ Resources:
         Statement:
           - Effect: 'Allow'
             Principal:
-              Service: 'ec2.amazonaws.com'
+              Service: 'ssm.amazonaws.com'
             Action: 's3:GetObject'
             Resource: !Sub 'arn:aws:s3:::${ArtifactsBucket}/*'
