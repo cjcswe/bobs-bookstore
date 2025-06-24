@@ -142,7 +142,7 @@ jobs:
             --comment "Download and start application" \
             --parameters '{
               "sourceType":["S3"],
-              "sourceInfo":["{\"path\":\"https://${{ needs.bootstrap.outputs.bucket_name }}.s3.amazonaws.com/${{ needs.build.outputs.artifact_path }}\"}"],
+              "sourceInfo":["{\"path\":\"s3://${{ needs.bootstrap.outputs.bucket_name }}/${{ needs.build.outputs.artifact_path }}\"}"],
               "workingDirectory":["/tmp"],
               "commandLine": ["unzip -q artifact.zip -d ./app && chmod +x ./app/startup.sh && ./app/startup.sh"]
             }' \
