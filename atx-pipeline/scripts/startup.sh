@@ -77,4 +77,3 @@ EOF
 sudo systemctl daemon-reload
 sudo systemctl enable "$MAIN_BINARY_NAME.service"
 sudo systemctl start "$MAIN_BINARY_NAME.service"
-
