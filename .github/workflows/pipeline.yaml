@@ -69,8 +69,11 @@ jobs:
             --output ${{ github.workspace }}/publish \
             --no-build
 
-      - name: Compress artifacts
-        run: cd ${{ github.workspace }}/publish && zip -r ../${{ env.ARTIFACT_NAME }}.zip .
+      - name: Prepare and compress artifacts
+        run: |
+          cp ${{ github.workspace }}/atx-pipeline/scripts/startup.sh ${{ github.workspace }}/publish/
+          cd ${{ github.workspace }}/publish
+          zip -r ../${{ env.ARTIFACT_NAME }}.zip .
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -136,11 +139,12 @@ jobs:
           COMMAND_ID=$(aws ssm send-command \
             --instance-ids $INSTANCE_ID \
             --document-name "AWS-RunRemoteScript" \
-            --comment "Download application artifacts" \
+            --comment "Download and start application" \
             --parameters '{
               "sourceType":["S3"],
               "sourceInfo":["{\"path\":\"https://${{ needs.bootstrap.outputs.bucket_name }}.s3.amazonaws.com/${{ needs.build.outputs.artifact_path }}\"}"],
-              "workingDirectory":["/tmp"]
+              "workingDirectory":["/tmp"],
+              "commandLine": ["unzip -q artifact.zip -d ./app && chmod +x ./app/startup.sh && ./app/startup.sh"]
             }' \
             --query "Command.CommandId" \
             --output text)
@@ -149,17 +153,22 @@ jobs:
           aws ssm wait command-executed \
             --command-id $COMMAND_ID \
             --instance-id $INSTANCE_ID &> /dev/null || true
+          echo "SSM Command finished"
 
-          echo "SSM Command finished. Output:"
-          aws ssm get-command-invocation \
+          PLUGINS=("downloadContent" "runShellScript")
+          for plugin in "${PLUGINS[@]}"; do
+            echo "Getting output for plugin: $plugin"
+            aws ssm get-command-invocation \
               --command-id $COMMAND_ID \
               --instance-id $INSTANCE_ID \
+              --plugin-name $plugin \
               --query "{
                 STATUS: Status,
                 STDOUT: StandardOutputContent,
                 STDERR: StandardErrorContent
               }" \
               --output table
+          done
 
           STATUS=$(aws ssm get-command-invocation \
             --command-id $COMMAND_ID \
