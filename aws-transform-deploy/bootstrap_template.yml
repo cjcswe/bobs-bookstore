@@ -1,0 +1,79 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'ATX Bootstrap Template for ECS Application Deployment'
+
+Parameters:
+  ApplicationName:
+    Type: String
+    Description: Name of the application to be deployed
+    MinLength: 1
+    MaxLength: 64
+    
+
+Resources:
+  # ECR Repository
+  ApplicationRepository:
+    Type: AWS::ECR::Repository
+    Properties:
+      RepositoryName: !Sub ${ApplicationName}-repository
+      Tags:
+        - Key: ResourceName
+          Value: !Sub ${ApplicationName}-repository
+        - Key: CreatedBy
+          Value: AWSTransform
+        - Key: TransformationType
+          Value: DotNET
+
+  # ECS Task Role
+  EcsTaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${ApplicationName}-TaskRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      Tags:
+        - Key: ResourceName
+          Value: !Sub ${ApplicationName}-TaskRole
+        - Key: CreatedBy
+          Value: AWSTransform
+        - Key: TransformationType
+          Value: DotNET
+
+  # ECS Execution Role
+  EcsExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${ApplicationName}-ExecutionRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+      Tags:
+        - Key: ResourceName
+          Value: !Sub ${ApplicationName}-ExecutionRole
+        - Key: CreatedBy
+          Value: AWSTransform
+        - Key: TransformationType
+          Value: DotNET
+
+Outputs:
+  RepositoryUri:
+    Description: URI of the ECR repository
+    Value: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${ApplicationName}-repository
+
+  TaskRoleArn:
+    Description: ARN of the ECS Task Role
+    Value: !GetAtt EcsTaskRole.Arn
+
+  ExecutionRoleArn:
+    Description: ARN of the ECS Execution Role
+    Value: !GetAtt EcsExecutionRole.Arn
