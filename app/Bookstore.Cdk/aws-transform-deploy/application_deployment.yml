@@ -15,7 +15,7 @@ Parameters:
   PrivateSubnetIds:
     Type: String
     Description: Private subnet IDs where ECS tasks will run
-    {% if subnet_ids %}Default: {{ ecs_cluster_subnet_ids }}{% endif %}
+    {% if ecs_cluster_subnet_ids %}Default: {{ ecs_cluster_subnet_ids }}{% endif %}
 
   AlbListenerArn:
     Type: String
@@ -30,7 +30,7 @@ Parameters:
   EcsSecurityGroupId:
     Type: String
     Description: Security group ID for ECS tasks
-    {% if security_group_id %}Default: {{ security_group_id }}{% endif %}
+    {% if ecs_cluster_security_group_id %}Default: {{ ecs_cluster_security_group_id }}{% endif %}
 
   ListenerRulePriority:
     Type: Number
