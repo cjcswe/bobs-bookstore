@@ -7,59 +7,52 @@ Parameters:
     Description: Prefix for resource names
     MinLength: 1
     MaxLength: 64
-    
+    Default: 
 
   VpcId:
     Type: String
     Description: VPC ID (leave empty to create new)
-    Default: ""
-    
+    Default: 
 
   PublicSubnetIds:
     Type: String
     Description: Public subnet IDs (leave empty to create new)
-    Default: ""
-    
+    Default: 
 
   PrivateSubnetIds:
     Type: String
     Description: Private subnet IDs (leave empty to create new)
-    Default: ""
-    
+    Default: 
 
   AlbArn:
     Type: String
     Description: ALB ARN (leave empty to create new)
-    Default: ""
-    
+    Default: 
 
   AlbSecurityGroupId:
     Type: String
     Description: ALB security group ID
-    Default: ""
-    
+    Default: 
 
   EcsClusterName:
     Type: String
     Description: ECS cluster name (leave empty to create new)
-    Default: ""
-    
+    Default: 
   
   EcsSecurityGroupId:
     Type: String
     Description: ECS security group ID (leave empty to create new)
-    Default: ""
-    
+    Default: 
 
   CertificateArn:
     Type: String
     Description: SSL certificate ARN for HTTPS (optional)
-    Default: ""
+    Default: 
 
   AlbListenerPort:
     Type: Number
     Description: Port for ALB Listener (defaults to 80, or 443 if using HTTPS)
-    Default: 0
+    Default: 
 
 Conditions:
   CreateNewVpc: !Equals [!Ref VpcId, '']

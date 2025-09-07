@@ -10,26 +10,32 @@ Parameters:
   VpcId:
     Type: String
     Description: VPC ID where the application will be deployed
+    
 
   PrivateSubnetIds:
     Type: String
     Description: Private subnet IDs where ECS tasks will run
+    
 
   AlbListenerArn:
     Type: String
     Description: ARN of the ALB listener for routing
+    
 
   EcsClusterName:
     Type: String
     Description: Name of the ECS cluster to deploy to
+    
 
   EcsSecurityGroupId:
     Type: String
     Description: Security group ID for ECS tasks
+    
 
   ListenerRulePriority:
     Type: Number
     Description: Priority for the ALB listener rule
+    
 
   ContainerImageUri:
     Type: String
@@ -38,31 +44,28 @@ Parameters:
 
   Cpu:
     Type: Number
-    Default: 256
+    Default: 
     AllowedValues: [256, 512, 1024, 2048, 4096]
     Description: CPU units for the ECS task
-    
 
   Memory:
     Type: Number
-    Default: 512
+    Default: 
     AllowedValues: [512, 1024, 2048, 4096, 8192, 16384]
     Description: Memory (MB) for the ECS task
-    
 
   OperatingSystem:
     Type: String
-    Default: Linux
+    Default: 
     AllowedValues: [Linux]
     Description: Container operating system
 
   ContainerPort:
     Type: Number
-    Default: 5000
+    Default: 
     MinValue: 1
     MaxValue: 65535
     Description: The container port to expose
-    
 
   EnvironmentVariables:
     Type: String
@@ -76,29 +79,31 @@ Parameters:
     Description: Hostname to match in ALB listener rule for host-based routing
     
 
-  CwLogConfiguration:
+  CloudWatchLogGroup:
     Type: String
     Description: Log group and stream configuration in format 'LogGroup,StreamPrefix'
-    Default: ''
-    
+    Default: 
+
+  CloudWatchLogStreamPrefix:
+    Type: String
+    Description: Log group and stream configuration in format 'LogGroup,StreamPrefix'
+    Default: 
 
   TaskCount:
     Type: Number
-    Default: 1
+    Default: 
     MinValue: 1
     Description: Number of tasks ECS will keep active
-    
 
   HealthCheckPath:
     Type: String
     Default: '/health'
     Description: Path for target group health checks
-    
 
 Conditions:
   UseEmptyEnvironment: !Equals [!Ref EnvironmentVariables, '{}']
   UseHostBasedRouting: !Not [!Equals [!Ref HostHeader, '']]
-  UseCwLogConfiguration: !Not [!Equals [!Ref CwLogConfiguration, '']]
+  UseCwLogConfiguration: !Not [!Equals [!Ref CloudWatchLogGroup, '']]
 
 Resources:
   LogGroup:
@@ -106,7 +111,7 @@ Resources:
     Properties:
       LogGroupName: !If 
         - UseCwLogConfiguration
-        - !Select [0, !Split [",", !Ref CwLogConfiguration]]
+        - !Select CloudWatchLogGroup
         - !Sub /ecs/${ApplicationName}
       RetentionInDays: 14
       Tags:
