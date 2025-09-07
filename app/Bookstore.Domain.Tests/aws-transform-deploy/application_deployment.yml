@@ -10,32 +10,26 @@ Parameters:
   VpcId:
     Type: String
     Description: VPC ID where the application will be deployed
-    
 
   PrivateSubnetIds:
     Type: String
     Description: Private subnet IDs where ECS tasks will run
-    
 
   AlbListenerArn:
     Type: String
     Description: ARN of the ALB listener for routing
-    
 
   EcsClusterName:
     Type: String
     Description: Name of the ECS cluster to deploy to
-    
 
   EcsSecurityGroupId:
     Type: String
     Description: Security group ID for ECS tasks
-    
 
   ListenerRulePriority:
     Type: Number
     Description: Priority for the ALB listener rule
-    
 
   ContainerImageUri:
     Type: String
