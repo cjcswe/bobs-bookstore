@@ -5,92 +5,92 @@ Parameters:
   ApplicationName:
     Type: String
     Description: Name of the application
-    {% if main_executable_binary %}Default: {{ main_executable_binary }}{% endif %}
+    Default: Bookstore.Web
 
   VpcId:
     Type: String
     Description: VPC ID where the application will be deployed
-    {% if ecs_vpc_id %}Default: {{ ecs_vpc_id }}{% endif %}
+    
 
   PrivateSubnetIds:
     Type: String
     Description: Private subnet IDs where ECS tasks will run
-    {% if ecs_cluster_subnet_ids %}Default: {{ ecs_cluster_subnet_ids }}{% endif %}
+    
 
   AlbListenerArn:
     Type: String
     Description: ARN of the ALB listener for routing
-    {% if ecs_alb_arn %}Default: {{ ecs_alb_arn }}{% endif %}
+    
 
   EcsClusterName:
     Type: String
     Description: Name of the ECS cluster to deploy to
-    {% if ecs_cluster_name %}Default: {{ ecs_cluster_name }}{% endif %}
+    
 
   EcsSecurityGroupId:
     Type: String
     Description: Security group ID for ECS tasks
-    {% if ecs_cluster_security_group_id %}Default: {{ ecs_cluster_security_group_id }}{% endif %}
+    
 
   ListenerRulePriority:
     Type: Number
     Description: Priority for the ALB listener rule
-    {% if ecs_alb_listener_rule_priority %}Default: {{ ecs_alb_listener_rule_priority }}{% endif %}
+    
 
   ContainerImageUri:
     Type: String
     Description: URI of existing container image to deploy.
-    {% if image_uri %}Default: {{ image_uri }}{% endif %}
+    
 
   Cpu:
     Type: Number
     Description: CPU units for the ECS task
-    Default: {{ cpu }}
+    Default: 256
     AllowedValues: [256, 512, 1024, 2048, 4096]
 
   Memory:
     Type: Number
     Description: Memory (MB) for the ECS task
-    Default: {{ memory }}
+    Default: 512
     AllowedValues: [512, 1024, 2048, 4096, 8192, 16384]
 
   OperatingSystem:
     Type: String
     Description: Container operating system
-    Default: '{{ os }}'
+    Default: 'Linux'
     AllowedValues: [Linux]
 
   ContainerPort:
     Type: Number
     Description: The container port to expose
-    Default: {{ container_port }}
+    Default: 5000
     MinValue: 1
     MaxValue: 65535
 
   EnvironmentVariables:
     Type: String
     Description: Key-value pairs for container environment variables
-    Default: '{{ env_vars | tojson }}'
+    Default: '{}'
 
   HostHeader:
     Type: String
     Description: Hostname to match in ALB listener rule for host-based routing
-    Default: '{% if host_header %}{{ host_header }}{% endif %}'
+    Default: ''
 
   CloudWatchLogGroup:
     Type: String
     Description: Log group and stream configuration in format 'LogGroup,StreamPrefix'
-    Default: '{{ cw_log_group }}'
+    Default: ''
 
   CloudWatchLogStreamPrefix:
     Type: String
     Description: Log group and stream configuration in format 'LogGroup,StreamPrefix'
-    Default: '{{ cw_log_stream_prefix }}'
+    Default: ''
 
   TaskCount:
     Type: Number
     Description: Number of tasks ECS will keep active
-    Default: {{ ecs_task_count }}
+    Default: 1
     MinValue: 1
 
   HealthCheckPath:
