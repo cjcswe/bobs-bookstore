@@ -75,7 +75,7 @@ Parameters:
   HostHeader:
     Type: String
     Description: Hostname to match in ALB listener rule for host-based routing
-    Default: '{{ host_header }}'
+    Default: '{% if image_uri %}{{ host_header }}{% endif %}'
 
   CloudWatchLogGroup:
     Type: String
