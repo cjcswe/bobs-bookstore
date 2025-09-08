@@ -19,10 +19,10 @@ $gitignorePath = ".gitignore"
 
 # Defaults
 $defaults = @{
-    InstanceType = "None"
+    InstanceType = "t3.small"
     VolumeSize = "30"
     Region = "us-east-1"
-    SubnetId = "None"
+    SubnetId = ""
     SecurityGroupIds = ""
     EC2InstanceProfile = "AWSTransformDotNET-EC2-Instance-Profile"
     CustomAmiId = ""
