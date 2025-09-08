@@ -11,7 +11,7 @@ As part of the code transformation AWS Transform analyzed your source code repos
 
 | Project name | Project file location | Deployment Scripts and templates location |
 |--------------|----------------------|---------------------------|
-| Bookstore.Web | `/opt/amazon/lib/python3.11/site-packages/workspace/bobs-bookstore/app/Bookstore.Web/Bookstore.Web.csproj` | `/opt/amazon/lib/python3.11/site-packages/workspace/bobs-bookstore/app/Bookstore.Web/aws-transform-deploy/`
+| Bookstore.Web | `/workplace/cjcswe/bobs-bookstore/app/Bookstore.Web/Bookstore.Web.csproj` | `/workplace/cjcswe/bobs-bookstore/app/Bookstore.Web/aws-transform-deploy/`
 
 AWS Transform provides deployment scripts and AWS CloudFormation templates to help you deploy your transformed .NET applications to Amazon EC2 instances. This comprehensive deployment solution includes infrastructure provisioning, application deployment, and management tools that streamline the process of getting your applications running in the AWS cloud.
 
