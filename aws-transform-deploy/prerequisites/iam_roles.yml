@@ -32,8 +32,11 @@ Resources:
       BucketName: !Sub
         - '${BucketName}-${AWS::AccountId}-${AWS::Region}'
         - BucketName: !FindInMap [ Constants, S3BucketName, Value ]
-      VersioningConfiguration:
-        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Id: DeleteObjectsAfter30Days
+            Status: Enabled
+            ExpirationInDays: 30
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true
