@@ -1,0 +1,256 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: |
+  Template to create IAM role for ECS Fargate deployment.
+
+Parameters:
+  ResourcePrefix:
+    Type: String
+    Description: Prefix for resource names (used in role names and resource tags)
+    Default: AWSTransformDotNET
+    #
+    MinLength: 1
+    MaxLength: 64
+
+Resources:
+  DeploymentRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub ${ResourcePrefix}-Deployment-Role
+      Description: Role used to deploy ECS Fargate infrastructure, tasks, and services
+      Tags:
+        - Key: CreatedFor
+          Value: AWSTransformDotNET
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: DeploymentPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              # CloudFormation permissions
+              - Effect: Allow
+                Action:
+                  - cloudformation:CreateStack
+                  - cloudformation:UpdateStack
+                  - cloudformation:DeleteStack
+                  - cloudformation:DescribeStacks
+                  - cloudformation:DescribeStackEvents
+                  - cloudformation:ListStacks
+                  - cloudformation:GetTemplateSummary
+                  - cloudformation:ValidateTemplate
+                  - cloudformation:ListStackResources
+                  - cloudformation:DescribeStackResource
+                  - cloudformation:DescribeStackResources
+                Resource: '*'
+              
+              # ECS permissions
+              - Effect: Allow
+                Action:
+                  - ecs:CreateCluster
+                  - ecs:DeleteCluster
+                  - ecs:DescribeClusters
+                  - ecs:ListClusters
+                  - ecs:UpdateClusterSettings
+                  - ecs:PutClusterCapacityProviders
+                  - ecs:ListServices
+                  - ecs:ListTasks
+                  - ecs:UpdateService
+                  - ecs:DeleteService
+                  - ecs:TagResource
+                  - ecs:UntagResource
+                  - ecs:ListTagsForResource
+                  - ecs:RegisterTaskDefinition
+                  - ecs:DeregisterTaskDefinition
+                  - ecs:ListTaskDefinitions
+                  - ecs:DescribeTaskDefinition
+                  - ecs:CreateService
+                  - ecs:UpdateService
+                  - ecs:DeleteService
+                  - ecs:DescribeServices
+                  - ecs:ListServices
+                  - ecs:ListTasks
+                  - ecs:DescribeTasks
+                  - ecs:StopTask
+                  - ecs:RunTask
+                  - ecs:StartTask
+                Resource: '*'
+              
+              # Load Balancer permissions
+              - Effect: Allow
+                Action:
+                  # Load Balancers
+                  - elasticloadbalancing:CreateLoadBalancer
+                  - elasticloadbalancing:DeleteLoadBalancer
+                  - elasticloadbalancing:DescribeLoadBalancers
+                  - elasticloadbalancing:ModifyLoadBalancerAttributes
+                  - elasticloadbalancing:DescribeLoadBalancerAttributes
+                  # Listeners
+                  - elasticloadbalancing:CreateListener
+                  - elasticloadbalancing:DeleteListener
+                  - elasticloadbalancing:DescribeListeners
+                  - elasticloadbalancing:ModifyListener
+                  # Target Groups
+                  - elasticloadbalancing:CreateTargetGroup
+                  - elasticloadbalancing:DeleteTargetGroup
+                  - elasticloadbalancing:DescribeTargetGroups
+                  - elasticloadbalancing:ModifyTargetGroup
+                  - elasticloadbalancing:ModifyTargetGroupAttributes
+                  # Rules
+                  - elasticloadbalancing:CreateRule
+                  - elasticloadbalancing:DeleteRule
+                  - elasticloadbalancing:DescribeRules
+                  - elasticloadbalancing:ModifyRule
+                  # SSL Certificates
+                  - elasticloadbalancing:AddListenerCertificates
+                  - elasticloadbalancing:RemoveListenerCertificates
+                  - elasticloadbalancing:DescribeListenerCertificates
+                  # Tags
+                  - elasticloadbalancing:AddTags
+                  - elasticloadbalancing:RemoveTags
+                  - elasticloadbalancing:DescribeTags
+                  # Other
+                  - elasticloadbalancing:SetIpAddressType
+                  - elasticloadbalancing:SetSecurityGroups
+                  - elasticloadbalancing:SetSubnets
+                  - elasticloadbalancing:SetWebAcl
+                  - elasticloadbalancing:RegisterTargets
+                  - elasticloadbalancing:DeregisterTargets
+                  - elasticloadbalancing:DescribeTargetHealth
+                Resource: '*'
+
+              # VPC and Networking permissions
+              - Effect: Allow
+                Action:
+                  # VPC
+                  - ec2:CreateVpc
+                  - ec2:DeleteVpc
+                  - ec2:ModifyVpcAttribute
+                  - ec2:DescribeVpcAttribute
+                  - ec2:DescribeVpcs
+                  # Subnets
+                  - ec2:CreateSubnet
+                  - ec2:DeleteSubnet
+                  - ec2:ModifySubnetAttribute
+                  - ec2:DescribeSubnets
+                  # Route Tables
+                  - ec2:CreateRouteTable
+                  - ec2:DeleteRouteTable
+                  - ec2:CreateRoute
+                  - ec2:DeleteRoute
+                  - ec2:AssociateRouteTable
+                  - ec2:DisassociateRouteTable
+                  - ec2:ReplaceRoute
+                  - ec2:DescribeRouteTables
+                  # Internet Gateway
+                  - ec2:CreateInternetGateway
+                  - ec2:DeleteInternetGateway
+                  - ec2:AttachInternetGateway
+                  - ec2:DetachInternetGateway
+                  - ec2:DescribeInternetGateways
+                  # NAT Gateway
+                  - ec2:CreateNatGateway
+                  - ec2:DeleteNatGateway
+                  - ec2:DescribeNatGateways
+                  # Elastic IPs
+                  - ec2:AllocateAddress
+                  - ec2:ReleaseAddress
+                  - ec2:AssociateAddress
+                  - ec2:DisassociateAddress
+                  - ec2:DescribeAddresses
+                  # Network Interfaces
+                  - ec2:CreateNetworkInterface
+                  - ec2:DeleteNetworkInterface
+                  - ec2:DescribeNetworkInterfaces
+                  - ec2:ModifyNetworkInterfaceAttribute
+                  # Tags
+                  - ec2:CreateTags
+                  - ec2:DeleteTags
+                  # General networking
+                  - ec2:DescribeAvailabilityZones
+                  - ec2:DescribeRegions
+                Resource: '*'
+
+              # Security Group permissions
+              - Effect: Allow
+                Action:
+                  - ec2:CreateSecurityGroup
+                  - ec2:DeleteSecurityGroup
+                  - ec2:AuthorizeSecurityGroupIngress
+                  - ec2:RevokeSecurityGroupIngress
+                  - ec2:AuthorizeSecurityGroupEgress
+                  - ec2:RevokeSecurityGroupEgress
+                  - ec2:UpdateSecurityGroupRuleDescriptionsIngress
+                  - ec2:UpdateSecurityGroupRuleDescriptionsEgress
+                  - ec2:ModifySecurityGroupRules
+                  - ec2:DescribeSecurityGroups
+                  - ec2:DescribeSecurityGroupRules
+                Resource: '*'
+              
+              # ECR permissions
+              - Effect: Allow
+                Action:
+                  - ecr:GetAuthorizationToken
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:BatchGetImage
+                  - ecr:InitiateLayerUpload
+                  - ecr:UploadLayerPart
+                  - ecr:CompleteLayerUpload
+                  - ecr:PutImage
+                  - ecr:ListImages
+                  - ecr:DescribeImages
+                  - ecr:BatchDeleteImage
+                  - ecr:TagResource
+                  - ecr:UntagResource
+                  - ecr:ListTagsForResource
+                Resource: '*'
+              
+              # CloudWatch Logs permissions
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:DeleteLogGroup
+                  - logs:PutRetentionPolicy
+                  - logs:DescribeLogGroups
+                  - logs:CreateLogStream
+                  - logs:DeleteLogStream
+                  - logs:PutLogEvents
+                  - logs:GetLogEvents
+                  - logs:FilterLogEvents
+                  - logs:DescribeLogStreams
+                  - logs:TagResource
+                  - logs:UntagResource
+                  - logs:ListTagsLogGroup
+                Resource: 
+                  - arn:aws:logs:*:*:log-group:/ecs/*
+                  - arn:aws:logs:*:*:log-group:/ecs/*:log-stream:*
+
+              # Auto Scaling permissions
+              - Effect: Allow
+                Action:
+                  - application-autoscaling:RegisterScalableTarget
+                  - application-autoscaling:DeregisterScalableTarget
+                  - application-autoscaling:PutScalingPolicy
+                  - application-autoscaling:DeleteScalingPolicy
+                  - application-autoscaling:DescribeScalableTargets
+                  - application-autoscaling:DescribeScalingPolicies
+                  - application-autoscaling:DescribeScheduledActions
+                Resource: '*'
+              
+              # IAM permissions for task roles
+              - Effect: Allow
+                Action: iam:PassRole
+                Resource: '*'
+                Condition:
+                  StringLike:
+                    iam:PassedToService: ecs-tasks.amazonaws.com
+
+Outputs:
+  DeploymentRoleArn:
+    Description: ARN of the deployment role
+    Value: !GetAtt DeploymentRole.Arn
