@@ -8,7 +8,7 @@ Parameters:
     MinLength: 1
     MaxLength: 64
     { %- if target_id % }
-    Default: { { target_id } }
+    Default: 
     { %- endif % }
 
   VpcId:
