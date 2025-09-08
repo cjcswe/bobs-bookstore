@@ -72,12 +72,12 @@ Parameters:
 
   CloudWatchLogGroup:
     Type: String
-    Description: Log group and stream configuration in format 'LogGroup,StreamPrefix'
+    Description: Cloud Watch Log Group to assign to the ECS task definition
     Default: ''
 
   CloudWatchLogStreamPrefix:
     Type: String
-    Description: Log group and stream configuration in format 'LogGroup,StreamPrefix'
+    Description: Log Stream prefix to use for ECS task container logs
     Default: ''
 
   TaskCount:

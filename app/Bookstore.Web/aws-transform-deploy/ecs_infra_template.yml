@@ -7,9 +7,6 @@ Parameters:
     Description: Prefix for resource names
     MinLength: 1
     MaxLength: 64
-    { %- if target_id % }
-    Default: 
-    { %- endif % }
 
   VpcId:
     Type: String
