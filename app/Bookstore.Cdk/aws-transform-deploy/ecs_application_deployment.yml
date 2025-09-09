@@ -14,9 +14,6 @@ Parameters:
   SecurityGroupId:
     Type: String
     Description: Security group ID for ECS tasks
-    { %- if ecs_cluster_security_group_id % }
-    Default: 
-    { %- endif % }
 
   EcsClusterName:
     Type: String
