@@ -121,36 +121,35 @@ EOF
 }
 
 initialize_parameters() {
-	    local missing_params=()
+    local missing_params=()
 
-			if [ -z "$STACK_NAME" ]; then
-					missing_params+=("$STACK_NAME")
-			fi
+    if [ -z "$STACK_NAME" ]; then
+        missing_params+=("$STACK_NAME")
+    fi
 
-      case $DEPLOYMENT_TYPE in
-          "ecs")
-              TEMPLATE_FILE_PATH="ecs_infra_template.yml"
-              if [ -z "$TARGET_NAME" ]; then
-                  missing_params+=("TARGET_NAME")
-              fi
-              ;;
-          *)
-              write_log "ERROR" "Unsupported deployment type: $DEPLOYMENT_TYPE"
-              write_log "ERROR" "Currently supported types: ecs"
-              show_usage
-              exit 1
-              ;;
-      esac
+    case $DEPLOYMENT_TYPE in
+        "ecs")
+            TEMPLATE_FILE_PATH="ecs_infra_template.yml"
+            if [ -z "$TARGET_NAME" ]; then
+                missing_params+=("TARGET_NAME")
+            fi
+            ;;
+        *)
+            write_log "ERROR" "Unsupported deployment type: $DEPLOYMENT_TYPE"
+            write_log "ERROR" "Currently supported types: ecs"
+            show_usage
+            exit 1
+            ;;
+    esac
 
-      if [ ${#missing_params[@]} -ne 0 ]; then
-          write_log "ERROR" "Missing required parameters: ${missing_params[*]}"
-          show_usage
-          exit 1
-      fi
+    if [ ${#missing_params[@]} -ne 0 ]; then
+        write_log "ERROR" "Missing required parameters: ${missing_params[*]}"
+        show_usage
+        exit 1
+    fi
 
     # Set region to default if not provided
     REGION=${REGION:-$DEFAULT_REGION}
-
 }
 
 assume_role() {
@@ -224,83 +223,83 @@ deploy_stack() {
         "ParameterKey=AlbListenerPort,ParameterValue=${ALB_LISTENER_PORT:-0}"
     )
 
-		# Check if the stack exists
-		local stack_info
-		stack_info=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --region "$REGION" 2>/dev/null)
+    # Check if the stack exists
+    local stack_info
+    stack_info=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --region "$REGION" 2>/dev/null)
 
-		# Update the stack if it exists
-		if [ $? -eq 0 ] && [ -n "$stack_info" ]; then
+    # Update the stack if it exists
+    if [ $? -eq 0 ] && [ -n "$stack_info" ]; then
 
-				echo "$stack_info"
-				write_log "INFO" "There is already a stack with that name. See its definition above."
+        echo "$stack_info"
+        write_log "INFO" "There is already a stack with that name. See its definition above."
 
-				read -r -p "Do you want to update the existing stack? (y/n) " REPLY
-				if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-						write_log "INFO" "Stack update cancelled by user."
-						exit 0
-				fi
+        read -r -p "Do you want to update the existing stack? (y/n) " REPLY
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            write_log "INFO" "Stack update cancelled by user."
+            exit 0
+        fi
 
-				if aws cloudformation update-stack \
-						--stack-name "$STACK_NAME" \
-						--template-body "file://$TEMPLATE_FILE_PATH" \
-						--parameters "${parameters[@]}" \
-						--capabilities CAPABILITY_IAM \
-						--region "$REGION" \
-						--tags Key=CreatedFor,Value=DotNET; then
+        if aws cloudformation update-stack \
+            --stack-name "$STACK_NAME" \
+            --template-body "file://$TEMPLATE_FILE_PATH" \
+            --parameters "${parameters[@]}" \
+            --capabilities CAPABILITY_IAM \
+            --region "$REGION" \
+            --tags Key=CreatedFor,Value=DotNET; then
 
-						write_log "WARN" "Waiting for stack update to complete..."
-						aws cloudformation wait stack-update-complete --stack-name "$STACK_NAME" --region "$REGION"
-						exit_code=$?
-				else
-						write_log "ERROR" "Failed to initiate stack update."
-						exit 1
-				fi
-
-		# Create a new stack if it doesn't exist
-		else
-				if aws cloudformation create-stack \
-						--stack-name "$STACK_NAME" \
-						--template-body "file://$TEMPLATE_FILE_PATH" \
-						--parameters "${parameters[@]}" \
-						--capabilities CAPABILITY_IAM \
-						--region "$REGION" \
-						--tags Key=CreatedFor,Value=AWSTransformDotNET; then
-
-						write_log "WARN" "Waiting for stack creation to complete..."
-						aws cloudformation wait stack-create-complete --stack-name "$STACK_NAME" --region "$REGION"
-						exit_code=$?
+            write_log "WARN" "Waiting for stack update to complete..."
+            aws cloudformation wait stack-update-complete --stack-name "$STACK_NAME" --region "$REGION"
+            exit_code=$?
         else
-        		write_log "ERROR" "Failed to initiate stack creation."
-        		exit 1
-      	fi
-		fi
+            write_log "ERROR" "Failed to initiate stack update."
+            exit 1
+        fi
 
-		if [ $exit_code -eq 0 ]; then
-				write_log "SUCCESS" "Stack deployment completed successfully!"
+    # Create a new stack if it doesn't exist
+    else
+        if aws cloudformation create-stack \
+            --stack-name "$STACK_NAME" \
+            --template-body "file://$TEMPLATE_FILE_PATH" \
+            --parameters "${parameters[@]}" \
+            --capabilities CAPABILITY_IAM \
+            --region "$REGION" \
+            --tags Key=CreatedFor,Value=AWSTransformDotNET; then
 
-				# Get and save stack outputs
-				aws cloudformation describe-stacks \
-						--stack-name "$STACK_NAME" \
-						--region "$REGION" \
-						--query 'Stacks[0].Outputs' \
-						--output json > "$APP_INFRA_FILE"
+            write_log "WARN" "Waiting for stack creation to complete..."
+            aws cloudformation wait stack-create-complete --stack-name "$STACK_NAME" --region "$REGION"
+            exit_code=$?
+        else
+            write_log "ERROR" "Failed to initiate stack creation."
+            exit 1
+        fi
+    fi
 
-				write_log "INFO" "Wrote infrastructure details to $APP_INFRA_FILE"
-				add_to_gitignore "$APP_INFRA_FILE"
+    if [ $exit_code -eq 0 ]; then
+        write_log "SUCCESS" "Stack deployment completed successfully!"
 
-				write_log "INFO" "Please refer to README.md and deploy.sh in order to deploy the application to this infrastructure."
-		else
-				write_log "ERROR" "Stack deployment failed"
-				aws cloudformation describe-stack-events \
-						--stack-name "$STACK_NAME" \
-						--region "$REGION" \
-						--query 'StackEvents[?ResourceStatus==`CREATE_FAILED`]' \
-						--output json | jq -r '.[] | "Failed resource: \(.LogicalResourceId)\nReason: \(.ResourceStatusReason)"' | \
-						while IFS= read -r line; do
-								write_log "ERROR" "$line"
-						done
-				exit 1
-		fi
+        # Get and save stack outputs
+        aws cloudformation describe-stacks \
+            --stack-name "$STACK_NAME" \
+            --region "$REGION" \
+            --query 'Stacks[0].Outputs' \
+            --output json > "$APP_INFRA_FILE"
+
+        write_log "INFO" "Wrote infrastructure details to $APP_INFRA_FILE"
+        add_to_gitignore "$APP_INFRA_FILE"
+
+        write_log "INFO" "Please refer to README.md and deploy.sh in order to deploy the application to this infrastructure."
+    else
+        write_log "ERROR" "Stack deployment failed"
+        aws cloudformation describe-stack-events \
+            --stack-name "$STACK_NAME" \
+            --region "$REGION" \
+            --query 'StackEvents[?ResourceStatus==`CREATE_FAILED`]' \
+            --output json | jq -r '.[] | "Failed resource: \(.LogicalResourceId)\nReason: \(.ResourceStatusReason)"' | \
+        while IFS= read -r line; do
+            write_log "ERROR" "$line"
+        done
+        exit 1
+    fi
 }
 
 check_dependencies() {
@@ -318,16 +317,16 @@ check_dependencies() {
 }
 
 main() {
-		# AWS CLI and jq must be installed
+        # AWS CLI and jq must be installed
     check_dependencies
 
     # Parse command line arguments
     parse_arguments "$@"
 
-		# Validate arguments and set defaults
+        # Validate arguments and set defaults
     initialize_parameters
 
-		# Assume the Deployment IAM Role
+        # Assume the Deployment IAM Role
     if [ "$SKIP_ASSUME_ROLE" != "true" ]; then
         assume_role
     fi
