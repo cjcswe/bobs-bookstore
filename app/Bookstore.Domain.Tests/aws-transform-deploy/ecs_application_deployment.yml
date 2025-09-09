@@ -22,6 +22,7 @@ Parameters:
   ContainerImageUri:
     Type: String
     Description: URI of existing container image to deploy.
+    Default: nginx:latest
 
   Cpu:
     Type: Number
