@@ -92,7 +92,9 @@ write_log() {
 
 show_usage() {
     write_log "INFO" "$(cat <<-EOF
-This script deploys the Application Infrastructure CloudFormation (CFN) Stack.
+Script Details:
+
+This script can be used to deploy the Application Infrastructure CloudFormation (CFN) Stack.
 
 Usage: ./deploy_infra.sh --deployment-type ecs [options]
 
@@ -103,7 +105,7 @@ Common Parameters:
     --skip-assume-role      : (Optional) Skip assuming the deployment role
 
 ECS Parameters:
-    --target-name           : (Required) Name of the target, used for resource naming
+    --target-name           : (Required) Name of the target (used for resource naming)
     --vpc-id                : (Optional) ID of the VPC for ECS deployment
     --public-subnet-ids     : (Optional) Comma-separated list of public subnet IDs
     --private-subnet-ids    : (Optional) Comma-separated list of private subnet IDs
@@ -122,40 +124,37 @@ EOF
 )"
 }
 
-validate_parameters() {
-    local missing_params=()
-
-    case $DEPLOYMENT_TYPE in
-        "ecs")
-            TEMPLATE_FILE_PATH="ecs_infra_template.yml"
-            if [ -z "$TARGET_NAME" ]; then
-                missing_params+=("TARGET_NAME")
-            fi
-            ;;
-        *)
-            write_log "ERROR" "Unsupported deployment type: $DEPLOYMENT_TYPE"
-            write_log "ERROR" "Currently supported types: ecs"
-            show_usage
-            exit 1
-            ;;
-    esac
-
-    if [ ${#missing_params[@]} -ne 0 ]; then
-        write_log "ERROR" "Missing required parameters: ${missing_params[*]}"
-        show_usage
-        exit 1
-    fi
-}
-
 initialize_parameters() {
+	    local missing_params=()
+
+			if [ -z "$STACK_NAME" ]; then
+					missing_params+=("$STACK_NAME")
+			fi
+
+      case $DEPLOYMENT_TYPE in
+          "ecs")
+              TEMPLATE_FILE_PATH="ecs_infra_template.yml"
+              if [ -z "$TARGET_NAME" ]; then
+                  missing_params+=("TARGET_NAME")
+              fi
+              ;;
+          *)
+              write_log "ERROR" "Unsupported deployment type: $DEPLOYMENT_TYPE"
+              write_log "ERROR" "Currently supported types: ecs"
+              show_usage
+              exit 1
+              ;;
+      esac
+
+      if [ ${#missing_params[@]} -ne 0 ]; then
+          write_log "ERROR" "Missing required parameters: ${missing_params[*]}"
+          show_usage
+          exit 1
+      fi
+
     # Set region to default if not provided
     REGION=${REGION:-$DEFAULT_REGION}
 
-    # Generate stack name if not provided
-    if [ -z "$STACK_NAME" ]; then
-        STACK_NAME="AWSTransform-Deploy-Infra-Stack-${TARGET_NAME}"
-        STACK_NAME=$(echo "$STACK_NAME" | sed -e 's/[^a-zA-Z0-9\-]/-/g' -e 's/--*/-/g')
-    fi
 }
 
 assume_role() {
@@ -212,31 +211,8 @@ add_to_gitignore() {
 }
 
 deploy_stack() {
-    # Check if stack exists
-    if aws cloudformation describe-stacks --stack-name "$STACK_NAME" --region "$REGION" 2>/dev/null; then
-        write_log "WARN" "Stack $STACK_NAME already exists."
-        
-        # Get current stack outputs
-        local outputs
-        outputs=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --region "$REGION" --query 'Stacks[0].Outputs' --output json)
-        
-        write_log "INFO" "Current stack has the following CFN outputs:"
-        echo "$outputs"
 
-        read -r -p "Do you want to delete the existing stack? (y/n) " REPLY
-        if [[ $REPLY =~ ^[Yy]$ ]]; then
-            write_log "INFO" "Stack deletion cancelled by user"
-            exit 0
-        fi
-
-        write_log "WARN" "Deleting stack $STACK_NAME..."
-        aws cloudformation delete-stack --stack-name "$STACK_NAME" --region "$REGION"
-        write_log "WARN" "Waiting for stack deletion to complete..."
-        aws cloudformation wait stack-delete-complete --stack-name "$STACK_NAME" --region "$REGION"
-        write_log "SUCCESS" "Stack deletion completed"
-    fi
-
-    write_log "SUCCESS" "Deploying stack: $STACK_NAME"
+    write_log "INFO" "Deploying stack: $STACK_NAME"
 
     # Create parameters array
     local parameters=(
@@ -317,10 +293,7 @@ main() {
     # Parse command line arguments
     parse_arguments "$@"
 
-		# Validate arguments
-    validate_parameters
-
-		# Set default parameters
+		# Validate arguments and set defaults
     initialize_parameters
 
 		# Assume the Deployment IAM Role
