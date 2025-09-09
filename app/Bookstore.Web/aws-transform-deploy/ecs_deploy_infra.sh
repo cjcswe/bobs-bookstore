@@ -10,7 +10,7 @@ APP_INFRA_FILE="application_infrastructure.config"
 GITIGNORE_PATH=".gitignore"
 
 # Default values
-DEFAULT_REGION="{{ region }}"
+DEFAULT_REGION="us-east-1"
 
 # Parse command line arguments
 parse_arguments() {
@@ -142,11 +142,13 @@ initialize_parameters() {
             ;;
     esac
 
+    
     if [ ${#missing_params[@]} -ne 0 ]; then
         write_log "ERROR" "Missing required parameters: ${missing_params[*]}"
         show_usage
         exit 1
     fi
+    
 
     # Set region to default if not provided
     REGION=${REGION:-$DEFAULT_REGION}
