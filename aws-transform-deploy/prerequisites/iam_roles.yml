@@ -108,7 +108,7 @@ Resources:
                   - ecr:BatchCheckLayerAvailability
                   - ecr:PutImage
                   - ecr:BatchGetImage
-                Resource: 'arn:aws:ecr:*:*:repository/AWSTransform-Deploy-*'
+                Resource: 'arn:aws:ecr:*:*:repository/awstransform-deploy*'
 
   EC2BuildInstanceProfile:
     Type: AWS::IAM::InstanceProfile

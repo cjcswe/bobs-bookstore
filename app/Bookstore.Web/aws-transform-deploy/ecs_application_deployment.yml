@@ -75,12 +75,12 @@ Parameters:
 
   CloudWatchLogGroup:
     Type: String
-    Description: Log group and stream configuration in format 'LogGroup,StreamPrefix'
+    Description: Cloud Watch Log Group to assign to the ECS task definition
     Default: ''
 
   CloudWatchLogStreamPrefix:
     Type: String
-    Description: Log group and stream configuration in format 'LogGroup,StreamPrefix'
+    Description: Log Stream prefix to use for ECS task container logs
     Default: ''
 
   TaskCount:
@@ -97,20 +97,16 @@ Parameters:
 Conditions:
   UseEmptyEnvironment: !Equals [!Ref EnvironmentVariables, '{}']
   UseHostBasedRouting: !Not [!Equals [!Ref HostHeader, '']]
-  UseCwLogConfiguration: !Not [!Equals [!Ref CloudWatchLogGroup, '']]
 
 Resources:
   LogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !If 
-        - UseCwLogConfiguration
-        - !Select CloudWatchLogGroup
-        - !Sub /ecs/${ApplicationName}
+      LogGroupName: !Ref CloudWatchLogGroup
       RetentionInDays: 14
       Tags:
         - Key: ResourceName
-          Value: !Sub ${ApplicationName}-logs
+          Value: !Ref CloudWatchLogGroup
         - Key: CreatedBy
           Value: AWSTransform
         - Key: TransformationType
@@ -120,7 +116,7 @@ Resources:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
       HealthCheckPath: !Ref HealthCheckPath
-      Name: !Sub ${ApplicationName}-tg
+      Name: !Sub AWSTransform-${ApplicationName}-Target-Group
       Port: !Ref ContainerPort
       Protocol: HTTP
       TargetType: ip
@@ -131,7 +127,7 @@ Resources:
       UnhealthyThresholdCount: 5
       Tags:
         - Key: ResourceName
-          Value: !Sub ${ApplicationName}-tg
+          Value: !Sub AWSTransform-${ApplicationName}-Target-Group
         - Key: CreatedBy
           Value: AWSTransform
         - Key: TransformationType
@@ -151,18 +147,17 @@ Resources:
       ListenerArn: !Ref AlbListenerArn
       Priority: !Ref ListenerRulePriority
 
-
   TaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
-      Family: !Ref ApplicationName
+      Family: !Ref AWSTransform-${ApplicationName}-Task-Definition
       Cpu: !Ref Cpu
       Memory: !Ref Memory
       NetworkMode: awsvpc
       RequiresCompatibilities:
         - FARGATE
-      ExecutionRoleArn: !Sub arn:aws:iam::${AWS::AccountId}:role/${ApplicationName}-ExecutionRole
-      TaskRoleArn: !Sub arn:aws:iam::${AWS::AccountId}:role/${ApplicationName}-TaskRole
+      ExecutionRoleArn: !Sub arn:aws:iam::${AWS::AccountId}:role/AWSTransform-Deploy-ECS-Execution-Role
+      TaskRoleArn: !Sub arn:aws:iam::${AWS::AccountId}:role/AWSTransform-Deploy-ECS-Task-Role
       RuntimePlatform:
         OperatingSystemFamily: !Ref OperatingSystem
       ContainerDefinitions:
@@ -178,18 +173,12 @@ Resources:
           LogConfiguration:
             LogDriver: awslogs
             Options:
-              awslogs-group: !If 
-                - UseCwLogConfiguration
-                - !Select [0, !Split [",", !Ref CwLogConfiguration]]
-                - !Sub /ecs/${ApplicationName}
-              awslogs-stream-prefix: !If 
-                - UseCwLogConfiguration
-                - !Select [1, !Split [",", !Ref CwLogConfiguration]]
-                - ecs
+              awslogs-group: !Ref CloudWatchLogGroup
+              awslogs-stream-prefix: !Ref CloudWatchLogStreamPrefix
               awslogs-region: !Ref AWS::Region
       Tags:
         - Key: ResourceName
-          Value: !Sub ${ApplicationName}-td
+          Value: !Sub AWSTransform-${ApplicationName}-Task-Definition
         - Key: CreatedBy
           Value: AWSTransform
         - Key: TransformationType
@@ -199,7 +188,7 @@ Resources:
     Type: AWS::ECS::Service
     DependsOn: ListenerRule
     Properties:
-      ServiceName: !Ref ApplicationName
+      ServiceName: !Sub AWSTransform-${ApplicationName}-Service
       Cluster: !Ref EcsClusterName
       TaskDefinition: !Ref TaskDefinition
       DesiredCount: !Ref TaskCount
@@ -216,7 +205,7 @@ Resources:
           TargetGroupArn: !Ref TargetGroup
       Tags:
         - Key: ResourceName
-          Value: !Sub ${ApplicationName}-service
+          Value: !Sub AWSTransform-${ApplicationName}-Service
         - Key: CreatedBy
           Value: AWSTransform
         - Key: TransformationType
@@ -228,11 +217,7 @@ Resources:
     Properties:
       MaxCapacity: 10
       MinCapacity: 1
-      ResourceId: !Join 
-        - '/'
-        - - service
-          - !Ref EcsClusterName
-          - !Ref ApplicationName
+      ResourceId: !Sub 'service/${EcsClusterName}/${ApplicationName}'
       RoleARN: !Sub arn:aws:iam::${AWS::AccountId}:role/aws-service-role/ecs.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_ECSService
       ScalableDimension: ecs:service:DesiredCount
       ServiceNamespace: ecs
@@ -240,7 +225,7 @@ Resources:
   ServiceAutoScalingPolicy:
     Type: AWS::ApplicationAutoScaling::ScalingPolicy
     Properties:
-      PolicyName: !Sub ${ApplicationName}-target-tracking
+      PolicyName: !Sub AWSTransform-${ApplicationName}-Scaling-Policy
       PolicyType: TargetTrackingScaling
       ScalingTargetId: !Ref ServiceAutoScalingTarget
       TargetTrackingScalingPolicyConfiguration:
