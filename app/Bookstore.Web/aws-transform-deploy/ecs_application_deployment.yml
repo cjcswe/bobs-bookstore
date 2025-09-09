@@ -113,7 +113,7 @@ Resources:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
       HealthCheckPath: !Ref HealthCheckPath
-      Name: !Sub AWSTransform-Deploy-${ApplicationName}-Target-Group
+      Name: !Sub AWSTransform-${ApplicationName}-Target-Group
       Port: !Ref ContainerPort
       Protocol: HTTP
       TargetType: ip
@@ -124,7 +124,7 @@ Resources:
       UnhealthyThresholdCount: 5
       Tags:
         - Key: ResourceName
-          Value: !Sub AWSTransform-Deploy-${ApplicationName}-Target-Group
+          Value: !Sub AWSTransform-${ApplicationName}-Target-Group
         - Key: CreatedBy
           Value: AWSTransform
         - Key: TransformationType
@@ -147,7 +147,7 @@ Resources:
   TaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
-      Family: !Ref AWSTransform-Deploy-${ApplicationName}-Task-Definition
+      Family: !Ref AWSTransform-${ApplicationName}-Task-Definition
       Cpu: !Ref Cpu
       Memory: !Ref Memory
       NetworkMode: awsvpc
@@ -175,7 +175,7 @@ Resources:
               awslogs-region: !Ref AWS::Region
       Tags:
         - Key: ResourceName
-          Value: !Sub AWSTransform-Deploy-${ApplicationName}-Task-Definition
+          Value: !Sub AWSTransform-${ApplicationName}-Task-Definition
         - Key: CreatedBy
           Value: AWSTransform
         - Key: TransformationType
@@ -185,7 +185,7 @@ Resources:
     Type: AWS::ECS::Service
     DependsOn: ListenerRule
     Properties:
-      ServiceName: !Sub AWSTransform-Deploy-${ApplicationName}-Service
+      ServiceName: !Sub AWSTransform-${ApplicationName}-Service
       Cluster: !Ref EcsClusterName
       TaskDefinition: !Ref TaskDefinition
       DesiredCount: !Ref TaskCount
@@ -202,7 +202,7 @@ Resources:
           TargetGroupArn: !Ref TargetGroup
       Tags:
         - Key: ResourceName
-          Value: !Sub AWSTransform-Deploy-${ApplicationName}-Service
+          Value: !Sub AWSTransform-${ApplicationName}-Service
         - Key: CreatedBy
           Value: AWSTransform
         - Key: TransformationType
@@ -222,7 +222,7 @@ Resources:
   ServiceAutoScalingPolicy:
     Type: AWS::ApplicationAutoScaling::ScalingPolicy
     Properties:
-      PolicyName: !Sub AWSTransform-Deploy-${ApplicationName}-Scaling-Policy
+      PolicyName: !Sub AWSTransform-${ApplicationName}-Scaling-Policy
       PolicyType: TargetTrackingScaling
       ScalingTargetId: !Ref ServiceAutoScalingTarget
       TargetTrackingScalingPolicyConfiguration:

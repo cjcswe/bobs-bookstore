@@ -10,7 +10,7 @@ APP_INFRA_FILE="application_infrastructure.config"
 GITIGNORE_PATH=".gitignore"
 
 # Default values
-DEFAULT_REGION="{{region}}"
+DEFAULT_REGION="{{ region }}"
 
 # Parse command line arguments
 parse_arguments() {
@@ -227,7 +227,7 @@ deploy_stack() {
     if stack_info=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --region "$REGION" 2>/dev/null); then
 
         echo "$stack_info"
-        write_log "INFO" "There is already a stack with that name. See its definition above."
+        write_log "WARN" "There is already a stack with that name. See its definition above."
 
         read -r -p "Do you want to update the existing stack? (y/n) " REPLY
         if [[ ! $REPLY =~ ^[Yy]$ ]]; then
@@ -243,7 +243,7 @@ deploy_stack() {
             --region "$REGION" \
             --tags Key=CreatedFor,Value=AWSTransform; then
 
-            write_log "WARN" "Waiting for stack update to complete..."
+            write_log "INFO" "Waiting for stack update to complete..."
             aws cloudformation wait stack-update-complete --stack-name "$STACK_NAME" --region "$REGION"
             exit_code=$?
         else
@@ -261,7 +261,7 @@ deploy_stack() {
             --region "$REGION" \
             --tags Key=CreatedFor,Value=AWSTransform; then
 
-            write_log "WARN" "Waiting for stack creation to complete..."
+            write_log "INFO" "Waiting for stack creation to complete..."
             aws cloudformation wait stack-create-complete --stack-name "$STACK_NAME" --region "$REGION"
             exit_code=$?
         else
@@ -313,16 +313,16 @@ check_dependencies() {
 }
 
 main() {
-        # AWS CLI and jq must be installed
+    # AWS CLI and jq must be installed
     check_dependencies
 
     # Parse command line arguments
     parse_arguments "$@"
 
-        # Validate arguments and set defaults
+    # Validate arguments and set defaults
     initialize_parameters
 
-        # Assume the Deployment IAM Role
+    # Assume the Deployment IAM Role
     if [ "$SKIP_ASSUME_ROLE" != "true" ]; then
         assume_role
     fi

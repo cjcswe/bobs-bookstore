@@ -80,7 +80,7 @@ Resources:
       EnableDnsHostnames: true
       Tags:
         - Key: ResourceName
-          Value: !Sub AWSTransform-Deploy-${TargetName}-VPC
+          Value: !Sub AWSTransform-${TargetName}-VPC
         - Key: CreatedBy
           Value: AWSTransform
         - Key: TransformationType
@@ -92,7 +92,7 @@ Resources:
     Properties:
       Tags:
         - Key: ResourceName
-          Value: !Sub AWSTransform-Deploy-${TargetName}-Internet-Gateway
+          Value: !Sub AWSTransform-${TargetName}-Internet-Gateway
         - Key: CreatedBy
           Value: AWSTransform
         - Key: TransformationType
@@ -115,7 +115,7 @@ Resources:
       MapPublicIpOnLaunch: true
       Tags:
         - Key: ResourceName
-          Value: !Sub AWSTransform-Deploy-${TargetName}-Public-Subnet-1
+          Value: !Sub AWSTransform-${TargetName}-Public-Subnet-1
         - Key: CreatedBy
           Value: AWSTransform
         - Key: TransformationType
@@ -131,7 +131,7 @@ Resources:
       MapPublicIpOnLaunch: true
       Tags:
         - Key: ResourceName
-          Value: !Sub AWSTransform-Deploy-${TargetName}-Public-Subnet-2
+          Value: !Sub AWSTransform-${TargetName}-Public-Subnet-2
         - Key: CreatedBy
           Value: AWSTransform
         - Key: TransformationType
@@ -146,7 +146,7 @@ Resources:
       AvailabilityZone: !Select [0, !GetAZs '']
       Tags:
         - Key: ResourceName
-          Value: !Sub AWSTransform-Deploy-${TargetName}-Private-Subnet-1
+          Value: !Sub AWSTransform-${TargetName}-Private-Subnet-1
         - Key: CreatedBy
           Value: AWSTransform
         - Key: TransformationType
@@ -161,7 +161,7 @@ Resources:
       AvailabilityZone: !Select [1, !GetAZs '']
       Tags:
         - Key: ResourceName
-          Value: !Sub AWSTransform-Deploy-${TargetName}-Private-Subnet-2
+          Value: !Sub AWSTransform-${TargetName}-Private-Subnet-2
         - Key: CreatedBy
           Value: AWSTransform
         - Key: TransformationType
@@ -174,7 +174,7 @@ Resources:
       VpcId: !If [CreateNewVpc, !Ref VPC, !Ref VpcId]
       Tags:
         - Key: ResourceName
-          Value: !Sub AWSTransform-Deploy-${TargetName}-Public-Route-Table
+          Value: !Sub AWSTransform-${TargetName}-Public-Route-Table
         - Key: CreatedBy
           Value: AWSTransform
         - Key: TransformationType
@@ -195,7 +195,7 @@ Resources:
       VpcId: !If [CreateNewVpc, !Ref VPC, !Ref VpcId]
       Tags:
         - Key: ResourceName
-          Value: !Sub AWSTransform-Deploy-${TargetName}-Private-Route-Table
+          Value: !Sub AWSTransform-${TargetName}-Private-Route-Table
         - Key: CreatedBy
           Value: AWSTransform 
         - Key: TransformationType
@@ -208,7 +208,7 @@ Resources:
       Domain: vpc
       Tags:
         - Key: ResourceName
-          Value: !Sub AWSTransform-Deploy-${TargetName}-EIP
+          Value: !Sub AWSTransform-${TargetName}-EIP
         - Key: CreatedBy
           Value: AWSTransform 
         - Key: TransformationType
@@ -222,7 +222,7 @@ Resources:
       SubnetId: !Ref PublicSubnet1
       Tags:
         - Key: ResourceName
-          Value: !Sub AWSTransform-Deploy-${TargetName}-Nat-Gateway
+          Value: !Sub AWSTransform-${TargetName}-Nat-Gateway
         - Key: CreatedBy
           Value: AWSTransform 
         - Key: TransformationType
@@ -277,7 +277,7 @@ Resources:
           CidrIp: 0.0.0.0/0
       Tags:
         - Key: ResourceName
-          Value: !Sub AWSTransform-Deploy-${TargetName}-ALB-Security-Group
+          Value: !Sub AWSTransform-${TargetName}-ALB-Security-Group
         - Key: CreatedBy
           Value: AWSTransform -
         - Key: TransformationType
@@ -287,7 +287,7 @@ Resources:
     Condition: CreateNewAlb
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
-      Name: !Sub AWSTransform-Deploy-${TargetName}-ALB
+      Name: !Sub AWSTransform-${TargetName}-ALB
       Scheme: internet-facing
       Type: application
       Subnets: !If
@@ -300,7 +300,7 @@ Resources:
         - [!Ref AlbSecurityGroupId]
       Tags:
         - Key: ResourceName
-          Value: !Sub AWSTransform-Deploy-${TargetName}-ALB
+          Value: !Sub AWSTransform-${TargetName}-ALB
         - Key: CreatedBy
           Value: AWSTransform
         - Key: TransformationType
@@ -323,19 +323,12 @@ Resources:
             StatusCode: '404'
             ContentType: 'text/plain'
             MessageBody: 'ServiceNotFound'
-      Tags:
-        - Key: ResourceName
-          Value: !Sub AWSTransform-Deploy-${TargetName}-Listener
-        - Key: CreatedBy
-          Value: AWSTransform
-        - Key: TransformationType
-          Value: DotNET
 
   EcsCluster:
     Condition: CreateNewEcsCluster
     Type: AWS::ECS::Cluster
     Properties:
-      ClusterName: !Sub AWSTransform-Deploy-${TargetName}-ECS-Cluster
+      ClusterName: !Sub AWSTransform-${TargetName}-ECS-Cluster
       CapacityProviders:
         - FARGATE
       DefaultCapacityProviderStrategy:
@@ -343,7 +336,7 @@ Resources:
           Weight: 1
       Tags:
         - Key: ResourceName
-          Value: !Sub AWSTransform-Deploy-${TargetName}-ECS-Cluster
+          Value: !Sub AWSTransform-${TargetName}-ECS-Cluster
         - Key: CreatedBy
           Value: AWSTransform
         - Key: TransformationType
@@ -370,7 +363,7 @@ Resources:
           CidrIp: 0.0.0.0/0 
       Tags:
         - Key: ResourceName
-          Value: !Sub AWSTransform-Deploy-${TargetName}-ECS-Security-Group
+          Value: !Sub AWSTransform-${TargetName}-ECS-Security-Group
         - Key: CreatedBy
           Value: AWSTransform
         - Key: TransformationType
