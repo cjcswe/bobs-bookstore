@@ -7,29 +7,20 @@ Parameters:
     Description: Name of the application
     Default: Bookstore.Web
 
-  VpcId:
-    Type: String
-    Description: VPC ID where the application will be deployed
-
-  PrivateSubnetIds:
+  SubnetIds:
     Type: String
     Description: Private subnet IDs where ECS tasks will run
 
-  AlbListenerArn:
+  SecurityGroupId:
     Type: String
-    Description: ARN of the ALB listener for routing
+    Description: Security group ID for ECS tasks
+    { %- if ecs_cluster_security_group_id % }
+    Default: { { ecs_cluster_security_group_id } }
+    { %- endif % }
 
   EcsClusterName:
     Type: String
     Description: Name of the ECS cluster to deploy to
-
-  EcsSecurityGroupId:
-    Type: String
-    Description: Security group ID for ECS tasks
-
-  ListenerRulePriority:
-    Type: Number
-    Description: Priority for the ALB listener rule
 
   ContainerImageUri:
     Type: String
@@ -65,11 +56,6 @@ Parameters:
     Description: Key-value pairs for container environment variables
     Default: '{}'
 
-  HostHeader:
-    Type: String
-    Description: Hostname to match in ALB listener rule for host-based routing
-    Default: ''
-
   CloudWatchLogGroup:
     Type: String
     Description: Cloud Watch Log Group to assign to the ECS task definition
@@ -86,14 +72,8 @@ Parameters:
     Default: 1
     MinValue: 1
 
-  HealthCheckPath:
-    Type: String
-    Description: Path for target group health checks
-    Default: '/health'
-
 Conditions:
   UseEmptyEnvironment: !Equals [!Ref EnvironmentVariables, '{}']
-  UseHostBasedRouting: !Not [!Equals [!Ref HostHeader, '']]
 
 Resources:
   LogGroup:
@@ -108,41 +88,6 @@ Resources:
           Value: AWSTransform
         - Key: TransformationType
           Value: DotNET
-
-  TargetGroup:
-    Type: AWS::ElasticLoadBalancingV2::TargetGroup
-    Properties:
-      HealthCheckPath: !Ref HealthCheckPath
-      Name: !Sub AWSTransform-${ApplicationName}-Target-Group
-      Port: !Ref ContainerPort
-      Protocol: HTTP
-      TargetType: ip
-      VpcId: !Ref VpcId
-      HealthCheckIntervalSeconds: 30
-      HealthCheckTimeoutSeconds: 5
-      HealthyThresholdCount: 2
-      UnhealthyThresholdCount: 5
-      Tags:
-        - Key: ResourceName
-          Value: !Sub AWSTransform-${ApplicationName}-Target-Group
-        - Key: CreatedBy
-          Value: AWSTransform
-        - Key: TransformationType
-          Value: DotNET
-
-  ListenerRule:
-    Type: AWS::ElasticLoadBalancingV2::ListenerRule
-    Properties:
-      Actions:
-        - Type: forward
-          TargetGroupArn: !Ref TargetGroup
-      Conditions:
-        - Field: host-header
-          HostHeaderConfig:
-            Values: 
-              - !Ref HostHeader
-      ListenerArn: !Ref AlbListenerArn
-      Priority: !Ref ListenerRulePriority
 
   TaskDefinition:
     Type: AWS::ECS::TaskDefinition
@@ -192,14 +137,10 @@ Resources:
       LaunchType: FARGATE
       NetworkConfiguration:
         AwsvpcConfiguration:
-          AssignPublicIp: DISABLED
-          Subnets: !Split [',', !Ref PrivateSubnetIds]
+          AssignPublicIp: ENABLED
+          Subnets: !Split [',', !Ref SubnetIds]
           SecurityGroups:
-            - !Ref EcsSecurityGroupId
-      LoadBalancers:
-        - ContainerName: !Ref ApplicationName
-          ContainerPort: !Ref ContainerPort
-          TargetGroupArn: !Ref TargetGroup
+            - !Ref SecurityGroupId
       Tags:
         - Key: ResourceName
           Value: !Sub AWSTransform-${ApplicationName}-Service
