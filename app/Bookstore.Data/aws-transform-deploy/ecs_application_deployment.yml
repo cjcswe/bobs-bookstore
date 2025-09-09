@@ -113,7 +113,7 @@ Resources:
           LogConfiguration:
             LogDriver: awslogs
             Options:
-              awslogs-group: !Ref CloudWatchLogGroup
+              awslogs-group: !Ref LogGroup
               awslogs-stream-prefix: !Ref CloudWatchLogStreamPrefix
               awslogs-region: !Ref AWS::Region
       Tags:
