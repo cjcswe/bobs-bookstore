@@ -90,7 +90,7 @@ Resources:
   TaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
-      Family: !Ref AWSTransform-${ApplicationName}-Task-Definition
+      Family: !Sub AWSTransform-${ApplicationName}-Task-Definition
       Cpu: !Ref Cpu
       Memory: !Ref Memory
       NetworkMode: awsvpc
