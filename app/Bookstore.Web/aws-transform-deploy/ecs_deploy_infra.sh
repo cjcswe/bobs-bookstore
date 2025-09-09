@@ -6,11 +6,10 @@ set -e
 
 # Constants
 TEMPLATE_FILE_PATH=""
-INSTANCE_ID_FILE="instance_id_from_infra_deployment.config"
+APP_INFRA_FILE="application_infrastructure.config"
 GITIGNORE_PATH=".gitignore"
 
 # Default values
-# Common defaults
 DEFAULT_REGION="{{region}}"
 
 # Parse command line arguments
@@ -83,21 +82,6 @@ parse_arguments() {
     done
 }
 
-# Function to handle future deployment types
-validate_deployment_type() {
-    local deployment_type=$1
-    case $deployment_type in
-        "ecs")
-            TEMPLATE_FILE_PATH="ecs_infra_template.yml"
-            ;;
-        *)
-            write_log "ERROR" "Unsupported deployment type: $deployment_type"
-            write_log "ERROR" "Currently supported types: ecs"
-            exit 1
-            ;;
-    esac
-}
-
 # Logging and display functions
 write_log() {
     local timestamp=$(date "+%Y-%m-%d %H:%M:%S")
@@ -107,33 +91,59 @@ write_log() {
 }
 
 show_usage() {
-    write_log "INFO" "Usage: 
+    write_log "INFO" "$(cat <<-EOF
+Usage:
     ./deploy_infra.sh --deployment-type ecs [options]
 
 Common Parameters:
-    --deployment-type        : (Required) Type of deployment (currently supports: ecs)
-    --stack-name            : (Optional) Name for the CloudFormation stack
+    --deployment-type       : (Required) Type of deployment
+    --stack-name            : (Required) Name for the CloudFormation stack
     --region                : (Optional) AWS region for deployment. Default: ${DEFAULT_REGION}
     --skip-assume-role      : (Optional) Skip assuming the deployment role
 
 ECS Parameters:
-    --target-name      : (Required) Name of the target, used for resource naming
-    --vpc-id               : (Optional) ID of the VPC for ECS deployment
-    --public-subnet-ids    : (Optional) Comma-separated list of public subnet IDs
-    --private-subnet-ids   : (Optional) Comma-separated list of private subnet IDs
-    --alb-arn             : (Optional) ARN of existing Application Load Balancer
-    --alb-security-group-id: (Optional) ID of existing ALB security group
-    --ecs-cluster-name     : (Optional) Name of existing ECS cluster
-    --ecs-security-group-id: (Optional) ID of existing ECS security group
-    --certificate-arn      : (Optional) ARN of ACM certificate for HTTPS listener
-    --alb-listener-port    : (Optional) Port for ALB listener. Default: 80 (HTTP) or 443 (HTTPS)
+    --target-name           : (Required) Name of the target, used for resource naming
+    --vpc-id                : (Optional) ID of the VPC for ECS deployment
+    --public-subnet-ids     : (Optional) Comma-separated list of public subnet IDs
+    --private-subnet-ids    : (Optional) Comma-separated list of private subnet IDs
+    --alb-arn               : (Optional) ARN of existing Application Load Balancer
+    --alb-security-group-id : (Optional) ID of existing ALB security group
+    --ecs-cluster-name      : (Optional) Name of existing ECS cluster
+    --ecs-security-group-id : (Optional) ID of existing ECS security group
+    --certificate-arn       : (Optional) ARN of ACM certificate for HTTPS listener
+    --alb-listener-port     : (Optional) Port for ALB listener. Default: 80 (HTTP) or 443 (HTTPS)
 
-This script will:    
-    Validate all input parameters
-    Deploy the stack and wait for completion
-    Write the infrastructure details to file '$INSTANCE_ID_FILE'
-    Provide detailed error information and suggestions if deployment fails
-    Show successful completion message if deployment succeeds"
+This script will:
+    Validate all input parameters.
+    Deploy the stack and wait for completion.
+    Write infrastructure details to file '$APP_INFRA_FILE'.
+EOF
+)"
+}
+
+validate_parameters() {
+    local missing_params=()
+
+    case $DEPLOYMENT_TYPE in
+        "ecs")
+            TEMPLATE_FILE_PATH="ecs_infra_template.yml"
+            if [ -z "$TARGET_NAME" ]; then
+                missing_params+=("TARGET_NAME")
+            fi
+            ;;
+        *)
+            write_log "ERROR" "Unsupported deployment type: $DEPLOYMENT_TYPE"
+            write_log "ERROR" "Currently supported types: ecs"
+            show_usage
+            exit 1
+            ;;
+    esac
+
+    if [ ${#missing_params[@]} -ne 0 ]; then
+        write_log "ERROR" "Missing required parameters: ${missing_params[*]}"
+        show_usage
+        exit 1
+    fi
 }
 
 initialize_parameters() {
@@ -144,27 +154,6 @@ initialize_parameters() {
     if [ -z "$STACK_NAME" ]; then
         STACK_NAME="AWSTransform-Deploy-Infra-Stack-${TARGET_NAME}"
         STACK_NAME=$(echo "$STACK_NAME" | sed -e 's/[^a-zA-Z0-9\-]/-/g' -e 's/--*/-/g')
-    fi
-
-    # Validate required parameters based on deployment type
-    validate_deployment_parameters
-}
-
-validate_deployment_parameters() {
-    local missing_params=()
-
-    case $DEPLOYMENT_TYPE in
-        "ecs")
-            if [ -z "$TARGET_NAME" ]; then
-                missing_params+=("TARGET_NAME")
-            fi
-            ;;
-    esac
-
-    if [ ${#missing_params[@]} -ne 0 ]; then
-        write_log "ERROR" "Missing required parameters: ${missing_params[*]}"
-        show_usage
-        exit 1
     fi
 }
 
@@ -234,7 +223,7 @@ deploy_stack() {
         echo "$outputs"
 
         read -r -p "Do you want to delete the existing stack? (y/n) " REPLY
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
             write_log "INFO" "Stack deletion cancelled by user"
             exit 0
         fi
@@ -282,10 +271,10 @@ deploy_stack() {
                 --stack-name "$STACK_NAME" \
                 --region "$REGION" \
                 --query 'Stacks[0].Outputs' \
-                --output json > "$INSTANCE_ID_FILE"
+                --output json > "$APP_INFRA_FILE"
 
-            write_log "INFO" "Infrastructure details written to $INSTANCE_ID_FILE"
-            add_to_gitignore "$INSTANCE_ID_FILE"
+            write_log "INFO" "Wrote infrastructure details to $APP_INFRA_FILE"
+            add_to_gitignore "$APP_INFRA_FILE"
             
             write_log "INFO" "Please refer to README.md and deploy.sh in order to deploy the application to this infrastructure."
         else
@@ -321,18 +310,19 @@ check_dependencies() {
 }
 
 main() {
+		# AWS CLI and jq must be installed
     check_dependencies
 
     # Parse command line arguments
     parse_arguments "$@"
 
-    # Validate deployment type
-    validate_deployment_type "$DEPLOYMENT_TYPE"
+		# Validate arguments
+    validate_parameters
 
-    # Initialize and validate parameters
+		# Set default parameters
     initialize_parameters
 
-    # Assume role if not skipped
+		# Assume the Deployment IAM Role
     if [ "$SKIP_ASSUME_ROLE" != "true" ]; then
         assume_role
     fi
