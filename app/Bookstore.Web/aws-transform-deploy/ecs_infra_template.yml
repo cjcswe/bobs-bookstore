@@ -1,0 +1,422 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'ATX .NET Application Infrastructure for ECS Deployment'
+
+Parameters:
+  ResourcePrefix:
+    Type: String
+    Description: Prefix for resource names
+    MinLength: 1
+    MaxLength: 64
+    Default: 
+
+  VpcId:
+    Type: String
+    Description: VPC ID (leave empty to create new)
+    Default: h
+
+  PublicSubnetIds:
+    Type: String
+    Description: Public subnet IDs (leave empty to create new)
+    Default: []
+
+  PrivateSubnetIds:
+    Type: String
+    Description: Private subnet IDs (leave empty to create new)
+    Default: []
+
+  AlbArn:
+    Type: String
+    Description: ALB ARN (leave empty to create new)
+    Default: 
+
+  AlbSecurityGroupId:
+    Type: String
+    Description: ALB security group ID
+    Default: 
+
+  EcsClusterName:
+    Type: String
+    Description: ECS cluster name (leave empty to create new)
+    Default: 
+  
+  EcsSecurityGroupId:
+    Type: String
+    Description: ECS security group ID (leave empty to create new)
+    Default: 
+
+  CertificateArn:
+    Type: String
+    Description: SSL certificate ARN for HTTPS (optional)
+    Default: 
+
+  AlbListenerPort:
+    Type: Number
+    Description: Port for ALB Listener (defaults to 80, or 443 if using HTTPS)
+    Default: 0
+
+Conditions:
+  CreateNewVpc: !Equals [!Ref VpcId, '']
+  CreateNewAlb: !Equals [!Ref AlbArn, '']
+  CreateNewEcsCluster: !Equals [!Ref EcsClusterName, '']
+  UseHttps: !Not [!Equals [!Ref CertificateArn, '']]
+  CreateNewSubnets: !Or
+    - !Equals [!Ref PublicSubnetIds, '']
+    - !Equals [!Ref PrivateSubnetIds, '']
+  CreateNewAlbSecurityGroup: !And 
+    - !Condition CreateNewAlb
+    - !Equals [!Ref AlbSecurityGroupId, '']
+  CreateNewEcsSecurityGroup: !Equals [!Ref EcsSecurityGroupId, '']
+  UseDefaultPort: !Equals [!Ref AlbListenerPort, 0]
+  UseHttpsPort: !And
+    - !Condition UseHttps
+    - !Condition UseDefaultPort
+
+Resources:
+  VPC:
+    Condition: CreateNewVpc
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: ResourceName
+          Value: !Sub ${ResourcePrefix}-VPC
+        - Key: CreatedBy
+          Value: AWSTransform
+        - Key: TransformationType
+          Value: DotNET
+
+  InternetGateway:
+    Condition: CreateNewSubnets
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: ResourceName
+          Value: !Sub ${ResourcePrefix}-IGW
+        - Key: CreatedBy
+          Value: AWSTransform
+        - Key: TransformationType
+          Value: DotNET
+  
+  AttachGateway:
+    Condition: CreateNewSubnets
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !If [CreateNewVpc, !Ref VPC, !Ref VpcId]
+      InternetGatewayId: !Ref InternetGateway
+
+  PublicSubnet1:
+    Condition: CreateNewSubnets
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !If [CreateNewVpc, !Ref VPC, !Ref VpcId]
+      CidrBlock: 10.0.1.0/24
+      AvailabilityZone: !Select [0, !GetAZs '']
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: ResourceName
+          Value: !Sub ${ResourcePrefix}-Public-Subnet-1
+        - Key: CreatedBy
+          Value: AWSTransform
+        - Key: TransformationType
+          Value: DotNET
+
+  PublicSubnet2:
+    Condition: CreateNewSubnets
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !If [CreateNewVpc, !Ref VPC, !Ref VpcId]
+      CidrBlock: 10.0.2.0/24
+      AvailabilityZone: !Select [1, !GetAZs '']
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: ResourceName
+          Value: !Sub ${ResourcePrefix}-Public-Subnet-2
+        - Key: CreatedBy
+          Value: AWSTransform
+        - Key: TransformationType
+          Value: DotNET
+
+  PrivateSubnet1:
+    Condition: CreateNewSubnets
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !If [CreateNewVpc, !Ref VPC, !Ref VpcId]
+      CidrBlock: 10.0.3.0/24
+      AvailabilityZone: !Select [0, !GetAZs '']
+      Tags:
+        - Key: ResourceName
+          Value: !Sub ${ResourcePrefix}-Private-Subnet-1
+        - Key: CreatedBy
+          Value: AWSTransform
+        - Key: TransformationType
+          Value: DotNET
+
+  PrivateSubnet2:
+    Condition: CreateNewSubnets
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !If [CreateNewVpc, !Ref VPC, !Ref VpcId]
+      CidrBlock: 10.0.4.0/24
+      AvailabilityZone: !Select [1, !GetAZs '']
+      Tags:
+        - Key: ResourceName
+          Value: !Sub ${ResourcePrefix}-Private-Subnet-2
+        - Key: CreatedBy
+          Value: AWSTransform
+        - Key: TransformationType
+          Value: DotNET
+
+  PublicRouteTable:
+    Condition: CreateNewSubnets
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !If [CreateNewVpc, !Ref VPC, !Ref VpcId]
+      Tags:
+        - Key: ResourceName
+          Value: !Sub ${ResourcePrefix}-Public-RT
+        - Key: CreatedBy
+          Value: AWSTransform
+        - Key: TransformationType
+          Value: DotNET
+
+  PublicRoute:
+    Condition: CreateNewSubnets
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PrivateRouteTable:
+    Condition: CreateNewSubnets
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !If [CreateNewVpc, !Ref VPC, !Ref VpcId]
+      Tags:
+        - Key: ResourceName
+          Value: !Sub ${ResourcePrefix}-Private-RT
+        - Key: CreatedBy
+          Value: AWSTransform 
+        - Key: TransformationType
+          Value: DotNET
+
+  EIP:
+    Condition: CreateNewSubnets
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: ResourceName
+          Value: !Sub ${ResourcePrefix}-EIP
+        - Key: CreatedBy
+          Value: AWSTransform 
+        - Key: TransformationType
+          Value: DotNET
+  
+  NatGateway1:
+    Condition: CreateNewSubnets
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt EIP.AllocationId
+      SubnetId: !Ref PublicSubnet1
+      Tags:
+        - Key: ResourceName
+          Value: !Sub ${ResourcePrefix}-NAT-Gateway
+        - Key: CreatedBy
+          Value: AWSTransform 
+        - Key: TransformationType
+          Value: DotNET
+
+  PrivateRoute:
+    Condition: CreateNewSubnets
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway1
+  
+  PublicSubnet1RouteTableAssociation:
+    Condition: CreateNewSubnets
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet1
+      RouteTableId: !Ref PublicRouteTable
+
+  PublicSubnet2RouteTableAssociation:
+    Condition: CreateNewSubnets
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PublicSubnet2
+      RouteTableId: !Ref PublicRouteTable
+
+  PrivateSubnet1RouteTableAssociation:
+    Condition: CreateNewSubnets
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet1
+      RouteTableId: !Ref PrivateRouteTable
+
+  PrivateSubnet2RouteTableAssociation:
+    Condition: CreateNewSubnets
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref PrivateSubnet2
+      RouteTableId: !Ref PrivateRouteTable
+
+  AlbSecurityGroup:
+    Condition: CreateNewAlbSecurityGroup
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for ALB
+      VpcId: !If [CreateNewVpc, !Ref VPC, !Ref VpcId]
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: !If [UseHttpsPort, 443, !If [UseDefaultPort, 80, !Ref AlbListenerPort]]
+          ToPort: !If [UseHttpsPort, 443, !If [UseDefaultPort, 80, !Ref AlbListenerPort]]
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: ResourceName
+          Value: !Sub ${ResourcePrefix}-ALB-SG
+        - Key: CreatedBy
+          Value: AWSTransform 
+        - Key: TransformationType
+          Value: DotNET
+
+  ApplicationLoadBalancer:
+    Condition: CreateNewAlb
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub ${ResourcePrefix}-alb
+      Scheme: internet-facing
+      Type: application
+      Subnets: !If
+        - CreateNewSubnets
+        - [!Ref PublicSubnet1, !Ref PublicSubnet2]
+        - !Split [",", !Ref PublicSubnetIds]
+      SecurityGroups: !If
+        - CreateNewAlbSecurityGroup
+        - [!Ref AlbSecurityGroup]
+        - [!Ref AlbSecurityGroupId]
+      Tags:
+        - Key: ResourceName
+          Value: !Sub ${ResourcePrefix}-ALB
+        - Key: CreatedBy
+          Value: AWSTransform
+        - Key: TransformationType
+          Value: DotNET
+
+  AlbListener:
+    Condition: CreateNewAlb
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref ApplicationLoadBalancer
+      Port: !If [UseHttpsPort, 443, !If [UseDefaultPort, 80, !Ref AlbListenerPort]]
+      Protocol: !If [UseHttps, 'HTTPS', 'HTTP']
+      Certificates: !If
+        - UseHttps
+        - [{ CertificateArn: !Ref CertificateArn }]
+        - !Ref AWS::NoValue
+      DefaultActions:
+        - Type: fixed-response
+          FixedResponseConfig:
+            StatusCode: '404'
+            ContentType: 'text/plain'
+            MessageBody: 'ServiceNotFound'
+
+  EcsCluster:
+    Condition: CreateNewEcsCluster
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Sub ${ResourcePrefix}-cluster
+      CapacityProviders:
+        - FARGATE
+      DefaultCapacityProviderStrategy:
+        - CapacityProvider: FARGATE
+          Weight: 1
+      Tags:
+        - Key: ResourceName
+          Value: !Sub ${ResourcePrefix}-ECS-Cluster
+        - Key: CreatedBy
+          Value: AWSTransform
+        - Key: TransformationType
+          Value: DotNET
+
+  EcsSecurityGroup:
+    Condition: CreateNewEcsSecurityGroup
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for ECS tasks
+      VpcId: !If [CreateNewVpc, !Ref VPC, !Ref VpcId]
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 0
+          ToPort: 65535
+          SourceSecurityGroupId: !If
+            - CreateNewAlbSecurityGroup
+            - !Ref AlbSecurityGroup
+            - !Ref AlbSecurityGroupId
+      SecurityGroupEgress:
+        - IpProtocol: -1
+          FromPort: -1
+          ToPort: -1
+          CidrIp: 0.0.0.0/0 
+      Tags:
+        - Key: ResourceName
+          Value: !Sub ${ResourcePrefix}-ECS-SG
+        - Key: CreatedBy
+          Value: AWSTransform
+        - Key: TransformationType
+          Value: DotNET
+
+Outputs:
+  VpcId:
+    Description: VPC ID
+    Value: !If 
+      - CreateNewVpc
+      - !Ref VPC
+      - !Ref VpcId
+
+  PublicSubnetIds:
+    Description: Public Subnet IDs
+    Value: !If 
+      - CreateNewSubnets
+      - !Join [',', [!Ref PublicSubnet1, !Ref PublicSubnet2]]
+      - !Ref PublicSubnetIds
+
+  PrivateSubnetIds:
+    Description: Private Subnet IDs
+    Value: !If 
+      - CreateNewSubnets
+      - !Join [',', [!Ref PrivateSubnet1, !Ref PrivateSubnet2]]
+      - !Ref PrivateSubnetIds
+
+  AlbArn:
+    Description: Application Load Balancer ARN
+    Value: !If 
+      - CreateNewAlb
+      - !Ref ApplicationLoadBalancer
+      - !Ref AlbArn
+
+  EcsClusterName:
+    Description: ECS Cluster Name
+    Value: !If 
+      - CreateNewEcsCluster
+      - !Ref EcsCluster
+      - !Ref EcsClusterName
+
+  EcsSecurityGroupId:
+    Description: ECS Security Group ID
+    Value: !Ref EcsSecurityGroup
+
+  AlbSecurityGroupId:
+    Description: ALB Security Group ID
+    Value: !If
+      - CreateNewAlbSecurityGroup
+      - !Ref AlbSecurityGroup
+      - !Ref AlbSecurityGroupId
+  
+  AlbListenerArn:
+    Description: ARN of the ALB listener
+    Value: !Ref AlbListener
