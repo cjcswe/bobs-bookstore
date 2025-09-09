@@ -13,18 +13,6 @@ GITIGNORE_PATH=".gitignore"
 # Common defaults
 DEFAULT_REGION="{{region}}"
 
-# ECS-specific defaults
-DEFAULT_$TARGET_NAME="{{target_name}}"
-DEFAULT_VPC_ID="{{vpc_id}}"
-DEFAULT_PUBLIC_SUBNET_IDS="{{public_subnet_ids}}"
-DEFAULT_PRIVATE_SUBNET_IDS="{{private_subnet_ids}}"
-DEFAULT_ALB_ARN="{{alb_arn}}"
-DEFAULT_ALB_SECURITY_GROUP_ID="{{alb_security_group_id}}"
-DEFAULT_ECS_CLUSTER_NAME="{{ecs_cluster_name}}"
-DEFAULT_ECS_SECURITY_GROUP_ID="{{ecs_security_group_id}}"
-DEFAULT_CERTIFICATE_ARN="{{certificate_arn}}"
-DEFAULT_ALB_LISTENER_PORT="{{alb_listener_port}}"
-
 # Parse command line arguments
 parse_arguments() {
     while [[ $# -gt 0 ]]; do
