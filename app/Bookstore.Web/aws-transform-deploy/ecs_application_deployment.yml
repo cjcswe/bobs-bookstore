@@ -126,7 +126,6 @@ Resources:
 
   Service:
     Type: AWS::ECS::Service
-    DependsOn: ListenerRule
     Properties:
       ServiceName: !Sub AWSTransform-${ApplicationName}-Service
       Cluster: !Ref EcsClusterName
