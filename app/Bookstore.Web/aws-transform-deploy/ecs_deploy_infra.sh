@@ -14,7 +14,7 @@ GITIGNORE_PATH=".gitignore"
 DEFAULT_REGION="{{region}}"
 
 # ECS-specific defaults
-DEFAULT_RESOURCE_PREFIX="{{resource_prefix}}"
+DEFAULT_$TARGET_NAME="{{target_name}}"
 DEFAULT_VPC_ID="{{vpc_id}}"
 DEFAULT_PUBLIC_SUBNET_IDS="{{public_subnet_ids}}"
 DEFAULT_PRIVATE_SUBNET_IDS="{{private_subnet_ids}}"
@@ -47,8 +47,8 @@ parse_arguments() {
                 shift
                 ;;
             # ECS-specific parameters
-            --resource-prefix)
-                RESOURCE_PREFIX="$2"
+            --target-name)
+                TARGET_NAME="$2"
                 shift 2
                 ;;
             --vpc-id)
@@ -129,7 +129,7 @@ Common Parameters:
     --skip-assume-role      : (Optional) Skip assuming the deployment role
 
 ECS Parameters:
-    --resource-prefix       : (Required) Prefix for resource names
+    --target-name      : (Required) Name of the target, used for resource naming
     --vpc-id               : (Optional) ID of the VPC for ECS deployment
     --public-subnet-ids    : (Optional) Comma-separated list of public subnet IDs
     --private-subnet-ids   : (Optional) Comma-separated list of private subnet IDs
@@ -154,7 +154,7 @@ initialize_parameters() {
 
     # Generate stack name if not provided
     if [ -z "$STACK_NAME" ]; then
-        STACK_NAME="AWSTransform-Deploy-Infra-Stack-${RESOURCE_PREFIX}"
+        STACK_NAME="AWSTransform-Deploy-Infra-Stack-${TARGET_NAME}"
         STACK_NAME=$(echo "$STACK_NAME" | sed -e 's/[^a-zA-Z0-9\-]/-/g' -e 's/--*/-/g')
     fi
 
@@ -167,8 +167,8 @@ validate_deployment_parameters() {
 
     case $DEPLOYMENT_TYPE in
         "ecs")
-            if [ -z "$RESOURCE_PREFIX" ]; then
-                missing_params+=("RESOURCE_PREFIX")
+            if [ -z "$TARGET_NAME" ]; then
+                missing_params+=("TARGET_NAME")
             fi
             ;;
     esac
@@ -181,7 +181,7 @@ validate_deployment_parameters() {
 }
 
 assume_role() {
-    local role_arn="arn:aws:iam::$(aws sts get-caller-identity --query Account --output text):role/${RESOURCE_PREFIX}-Deployment-Role"
+    local role_arn="arn:aws:iam::$(aws sts get-caller-identity --query Account --output text):role/${TARGET_NAME}-Deployment-Role"
     write_log "INFO" "Assuming role: $role_arn"
     
     local credentials=$(aws sts assume-role --role-arn "$role_arn" --role-session-name "DeploymentSession" --output json)
@@ -262,7 +262,7 @@ deploy_stack() {
 
     # Create parameters array
     local parameters=(
-        "ParameterKey=ResourcePrefix,ParameterValue=$RESOURCE_PREFIX"
+        "ParameterKey=TargetName,ParameterValue=$TARGET_NAME"
         "ParameterKey=VpcId,ParameterValue=${VPC_ID:-''}"
         "ParameterKey=PublicSubnetIds,ParameterValue='${PUBLIC_SUBNET_IDS:-''}'"
         "ParameterKey=PrivateSubnetIds,ParameterValue='${PRIVATE_SUBNET_IDS:-''}'"
