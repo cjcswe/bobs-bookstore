@@ -224,16 +224,15 @@ deploy_stack() {
         "ParameterKey=AlbListenerPort,ParameterValue=${ALB_LISTENER_PORT:-0}"
     )
 
-    # Check if stack exists. If so, then update the stack.
-    if aws cloudformation describe-stacks --stack-name "$STACK_NAME" --region "$REGION" 2>/dev/null; then
-				write_log "WARN" "Stack $STACK_NAME already exists."
+		# Check if the stack exists
+		local stack_info
+		stack_info=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --region "$REGION" 2>/dev/null)
 
-				# Get current stack outputs
-				local outputs
-				outputs=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --region "$REGION" --query 'Stacks[0].Outputs' --output json)
+		# Update the stack if it exists
+		if [ $? -eq 0 ] && [ -n "$stack_info" ]; then
 
 				write_log "INFO" "The current stack has outputs:"
-				echo "$outputs"
+				echo "$stack_info"
 
 				read -r -p "Do you want to update the existing stack? (y/n) " REPLY
 				if [[ ! $REPLY =~ ^[Yy]$ ]]; then
@@ -241,7 +240,6 @@ deploy_stack() {
 						exit 0
 				fi
 
-				# Update stack
 				if aws cloudformation update-stack \
 						--stack-name "$STACK_NAME" \
 						--template-body "file://$TEMPLATE_FILE_PATH" \
@@ -258,7 +256,7 @@ deploy_stack() {
 						exit 1
 				fi
 
-		# If the stack doesn't exist, then create it.
+		# Create a new stack if it doesn't exist
 		else
 				if aws cloudformation create-stack \
 						--stack-name "$STACK_NAME" \
