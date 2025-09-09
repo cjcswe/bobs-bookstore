@@ -248,11 +248,11 @@ deploy_stack() {
 						--region "$REGION" \
 						--tags Key=CreatedFor,Value=DotNET; then
 
-						write_log "WARN" "Waiting for stack creation to complete..."
-						aws cloudformation wait stack-create-complete --stack-name "$STACK_NAME" --region "$REGION"
+						write_log "WARN" "Waiting for stack update to complete..."
+						aws cloudformation wait stack-update-complete --stack-name "$STACK_NAME" --region "$REGION"
 						exit_code=$?
 				else
-						write_log "ERROR" "Failed to initiate stack creation"
+						write_log "ERROR" "Failed to initiate stack update."
 						exit 1
 				fi
 
@@ -270,7 +270,7 @@ deploy_stack() {
 						aws cloudformation wait stack-create-complete --stack-name "$STACK_NAME" --region "$REGION"
 						exit_code=$?
         else
-        		write_log "ERROR" "Failed to initiate stack creation"
+        		write_log "ERROR" "Failed to initiate stack creation."
         		exit 1
       	fi
 		fi
