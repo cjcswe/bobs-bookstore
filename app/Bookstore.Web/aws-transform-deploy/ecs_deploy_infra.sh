@@ -231,8 +231,8 @@ deploy_stack() {
 		# Update the stack if it exists
 		if [ $? -eq 0 ] && [ -n "$stack_info" ]; then
 
-				write_log "INFO" "The current stack has outputs:"
 				echo "$stack_info"
+				write_log "INFO" "There is already a stack with that name. See its definition above."
 
 				read -r -p "Do you want to update the existing stack? (y/n) " REPLY
 				if [[ ! $REPLY =~ ^[Yy]$ ]]; then
