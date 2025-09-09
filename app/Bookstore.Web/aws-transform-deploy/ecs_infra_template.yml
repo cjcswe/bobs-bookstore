@@ -398,6 +398,17 @@ Outputs:
       - !Ref ApplicationLoadBalancer
       - !Ref AlbArn
 
+  AlbListenerArn:
+    Description: ARN of the ALB listener
+    Value: !Ref AlbListener
+
+  AlbSecurityGroupId:
+    Description: ALB Security Group ID
+    Value: !If
+      - CreateNewAlbSecurityGroup
+      - !Ref AlbSecurityGroup
+      - !Ref AlbSecurityGroupId
+
   EcsClusterName:
     Description: ECS Cluster Name
     Value: !If 
@@ -407,15 +418,7 @@ Outputs:
 
   EcsSecurityGroupId:
     Description: ECS Security Group ID
-    Value: !Ref EcsSecurityGroup
-
-  AlbSecurityGroupId:
-    Description: ALB Security Group ID
     Value: !If
-      - CreateNewAlbSecurityGroup
-      - !Ref AlbSecurityGroup
-      - !Ref AlbSecurityGroupId
-  
-  AlbListenerArn:
-    Description: ARN of the ALB listener
-    Value: !Ref AlbListener
+      - CreateNewEcsSecurityGroup
+      - !Ref EcsSecurityGroup
+      - !Ref EcsSecurityGroupId
