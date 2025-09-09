@@ -54,16 +54,6 @@ Parameters:
     Description: Key-value pairs for container environment variables
     Default: '{}'
 
-  CloudWatchLogGroup:
-    Type: String
-    Description: Cloud Watch Log Group to assign to the ECS task definition
-    Default: '/ecs/AWSTransform-Logs'
-
-  CloudWatchLogStreamPrefix:
-    Type: String
-    Description: Log Stream prefix to use for ECS task container logs
-    Default: 'ecs'
-
   TaskCount:
     Type: Number
     Description: Number of tasks ECS will keep active
@@ -77,11 +67,11 @@ Resources:
   LogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
-      LogGroupName: !Ref CloudWatchLogGroup
+      LogGroupName: !Sub /ecs/AWSTransform-${ApplicationName}-Logs
       RetentionInDays: 14
       Tags:
         - Key: ResourceName
-          Value: !Ref CloudWatchLogGroup
+          Value: !Sub AWSTransform-${ApplicationName}-Logs
         - Key: CreatedBy
           Value: AWSTransform
         - Key: TransformationType
@@ -114,7 +104,7 @@ Resources:
             LogDriver: awslogs
             Options:
               awslogs-group: !Ref LogGroup
-              awslogs-stream-prefix: !Ref CloudWatchLogStreamPrefix
+              awslogs-stream-prefix: 'ecs'
               awslogs-region: !Ref AWS::Region
       Tags:
         - Key: ResourceName
