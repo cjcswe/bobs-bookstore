@@ -2,52 +2,51 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: 'ATX .NET Application Infrastructure for ECS Deployment'
 
 Parameters:
-  ResourcePrefix:
+  TargetName:
     Type: String
-    Description: Prefix for resource names
+    Description: Target name (used for resource naming)
     MinLength: 1
     MaxLength: 64
-    Default: 
 
   VpcId:
     Type: String
     Description: VPC ID (leave empty to create new)
-    Default: 
+    Default: ''
 
   PublicSubnetIds:
     Type: String
-    Description: Public subnet IDs (leave empty to create new)
-    Default: []
+    Description: Public Subnet IDs (leave empty to create new)
+    Default: '[]'
 
   PrivateSubnetIds:
     Type: String
-    Description: Private subnet IDs (leave empty to create new)
-    Default: []
+    Description: Private Subnet IDs (leave empty to create new)
+    Default: '[]'
 
   AlbArn:
     Type: String
-    Description: ALB ARN (leave empty to create new)
-    Default: 
+    Description: AWS Load Balancer (ALB) ARN (leave empty to create new)
+    Default: ''
 
   AlbSecurityGroupId:
     Type: String
-    Description: ALB security group ID
-    Default: 
+    Description: ALB Security Group ID (leave empty to create new)
+    Default: ''
 
   EcsClusterName:
     Type: String
-    Description: ECS cluster name (leave empty to create new)
-    Default: 
+    Description: ECS Cluster name (leave empty to create new)
+    Default: ''
   
   EcsSecurityGroupId:
     Type: String
-    Description: ECS security group ID (leave empty to create new)
-    Default: 
+    Description: ECS Security Group ID (leave empty to create new)
+    Default: ''
 
   CertificateArn:
     Type: String
-    Description: SSL certificate ARN for HTTPS (optional)
-    Default: 
+    Description: SSL Certificate ARN for HTTPS (optional)
+    Default: ''
 
   AlbListenerPort:
     Type: Number
@@ -81,7 +80,7 @@ Resources:
       EnableDnsHostnames: true
       Tags:
         - Key: ResourceName
-          Value: !Sub ${ResourcePrefix}-VPC
+          Value: !Sub AWSTransform-${TargetName}-VPC
         - Key: CreatedBy
           Value: AWSTransform
         - Key: TransformationType
@@ -93,7 +92,7 @@ Resources:
     Properties:
       Tags:
         - Key: ResourceName
-          Value: !Sub ${ResourcePrefix}-IGW
+          Value: !Sub AWSTransform-${TargetName}-Internet-Gateway
         - Key: CreatedBy
           Value: AWSTransform
         - Key: TransformationType
@@ -116,7 +115,7 @@ Resources:
       MapPublicIpOnLaunch: true
       Tags:
         - Key: ResourceName
-          Value: !Sub ${ResourcePrefix}-Public-Subnet-1
+          Value: !Sub AWSTransform-${TargetName}-Public-Subnet-1
         - Key: CreatedBy
           Value: AWSTransform
         - Key: TransformationType
@@ -132,7 +131,7 @@ Resources:
       MapPublicIpOnLaunch: true
       Tags:
         - Key: ResourceName
-          Value: !Sub ${ResourcePrefix}-Public-Subnet-2
+          Value: !Sub AWSTransform-${TargetName}-Public-Subnet-2
         - Key: CreatedBy
           Value: AWSTransform
         - Key: TransformationType
@@ -147,7 +146,7 @@ Resources:
       AvailabilityZone: !Select [0, !GetAZs '']
       Tags:
         - Key: ResourceName
-          Value: !Sub ${ResourcePrefix}-Private-Subnet-1
+          Value: !Sub AWSTransform-${TargetName}-Private-Subnet-1
         - Key: CreatedBy
           Value: AWSTransform
         - Key: TransformationType
@@ -162,7 +161,7 @@ Resources:
       AvailabilityZone: !Select [1, !GetAZs '']
       Tags:
         - Key: ResourceName
-          Value: !Sub ${ResourcePrefix}-Private-Subnet-2
+          Value: !Sub AWSTransform-${TargetName}-Private-Subnet-2
         - Key: CreatedBy
           Value: AWSTransform
         - Key: TransformationType
@@ -175,7 +174,7 @@ Resources:
       VpcId: !If [CreateNewVpc, !Ref VPC, !Ref VpcId]
       Tags:
         - Key: ResourceName
-          Value: !Sub ${ResourcePrefix}-Public-RT
+          Value: !Sub AWSTransform-${TargetName}-Public-Route-Table
         - Key: CreatedBy
           Value: AWSTransform
         - Key: TransformationType
@@ -196,7 +195,7 @@ Resources:
       VpcId: !If [CreateNewVpc, !Ref VPC, !Ref VpcId]
       Tags:
         - Key: ResourceName
-          Value: !Sub ${ResourcePrefix}-Private-RT
+          Value: !Sub AWSTransform-${TargetName}-Private-Route-Table
         - Key: CreatedBy
           Value: AWSTransform 
         - Key: TransformationType
@@ -209,7 +208,7 @@ Resources:
       Domain: vpc
       Tags:
         - Key: ResourceName
-          Value: !Sub ${ResourcePrefix}-EIP
+          Value: !Sub AWSTransform-${TargetName}-EIP
         - Key: CreatedBy
           Value: AWSTransform 
         - Key: TransformationType
@@ -223,7 +222,7 @@ Resources:
       SubnetId: !Ref PublicSubnet1
       Tags:
         - Key: ResourceName
-          Value: !Sub ${ResourcePrefix}-NAT-Gateway
+          Value: !Sub AWSTransform-${TargetName}-Nat-Gateway
         - Key: CreatedBy
           Value: AWSTransform 
         - Key: TransformationType
@@ -278,9 +277,9 @@ Resources:
           CidrIp: 0.0.0.0/0
       Tags:
         - Key: ResourceName
-          Value: !Sub ${ResourcePrefix}-ALB-SG
+          Value: !Sub AWSTransform-${TargetName}-ALB-Security-Group
         - Key: CreatedBy
-          Value: AWSTransform 
+          Value: AWSTransform -
         - Key: TransformationType
           Value: DotNET
 
@@ -288,7 +287,7 @@ Resources:
     Condition: CreateNewAlb
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
-      Name: !Sub ${ResourcePrefix}-alb
+      Name: !Sub AWSTransform-${TargetName}-ALB
       Scheme: internet-facing
       Type: application
       Subnets: !If
@@ -301,7 +300,7 @@ Resources:
         - [!Ref AlbSecurityGroupId]
       Tags:
         - Key: ResourceName
-          Value: !Sub ${ResourcePrefix}-ALB
+          Value: !Sub AWSTransform-${TargetName}-ALB
         - Key: CreatedBy
           Value: AWSTransform
         - Key: TransformationType
@@ -329,7 +328,7 @@ Resources:
     Condition: CreateNewEcsCluster
     Type: AWS::ECS::Cluster
     Properties:
-      ClusterName: !Sub ${ResourcePrefix}-cluster
+      ClusterName: !Sub AWSTransform-${TargetName}-ECS-Cluster
       CapacityProviders:
         - FARGATE
       DefaultCapacityProviderStrategy:
@@ -337,7 +336,7 @@ Resources:
           Weight: 1
       Tags:
         - Key: ResourceName
-          Value: !Sub ${ResourcePrefix}-ECS-Cluster
+          Value: !Sub AWSTransform-${TargetName}-ECS-Cluster
         - Key: CreatedBy
           Value: AWSTransform
         - Key: TransformationType
@@ -364,7 +363,7 @@ Resources:
           CidrIp: 0.0.0.0/0 
       Tags:
         - Key: ResourceName
-          Value: !Sub ${ResourcePrefix}-ECS-SG
+          Value: !Sub AWSTransform-${TargetName}-ECS-Security-Group
         - Key: CreatedBy
           Value: AWSTransform
         - Key: TransformationType
@@ -399,6 +398,17 @@ Outputs:
       - !Ref ApplicationLoadBalancer
       - !Ref AlbArn
 
+  AlbListenerArn:
+    Description: ARN of the ALB listener
+    Value: !Ref AlbListener
+
+  AlbSecurityGroupId:
+    Description: ALB Security Group ID
+    Value: !If
+      - CreateNewAlbSecurityGroup
+      - !Ref AlbSecurityGroup
+      - !Ref AlbSecurityGroupId
+
   EcsClusterName:
     Description: ECS Cluster Name
     Value: !If 
@@ -408,15 +418,7 @@ Outputs:
 
   EcsSecurityGroupId:
     Description: ECS Security Group ID
-    Value: !Ref EcsSecurityGroup
-
-  AlbSecurityGroupId:
-    Description: ALB Security Group ID
     Value: !If
-      - CreateNewAlbSecurityGroup
-      - !Ref AlbSecurityGroup
-      - !Ref AlbSecurityGroupId
-  
-  AlbListenerArn:
-    Description: ARN of the ALB listener
-    Value: !Ref AlbListener
+      - CreateNewEcsSecurityGroup
+      - !Ref EcsSecurityGroup
+      - !Ref EcsSecurityGroupId
