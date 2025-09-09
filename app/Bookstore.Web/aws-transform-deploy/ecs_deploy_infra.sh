@@ -223,12 +223,8 @@ deploy_stack() {
         "ParameterKey=AlbListenerPort,ParameterValue=${ALB_LISTENER_PORT:-0}"
     )
 
-    # Check if the stack exists
-    local stack_info
-    stack_info=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --region "$REGION" 2>/dev/null)
-
     # Update the stack if it exists
-    if [ $? -eq 0 ] && [ -n "$stack_info" ]; then
+    if stack_info=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --region "$REGION" 2>/dev/null); then
 
         echo "$stack_info"
         write_log "INFO" "There is already a stack with that name. See its definition above."
@@ -245,7 +241,7 @@ deploy_stack() {
             --parameters "${parameters[@]}" \
             --capabilities CAPABILITY_IAM \
             --region "$REGION" \
-            --tags Key=CreatedFor,Value=DotNET; then
+            --tags Key=CreatedFor,Value=AWSTransform; then
 
             write_log "WARN" "Waiting for stack update to complete..."
             aws cloudformation wait stack-update-complete --stack-name "$STACK_NAME" --region "$REGION"
@@ -263,7 +259,7 @@ deploy_stack() {
             --parameters "${parameters[@]}" \
             --capabilities CAPABILITY_IAM \
             --region "$REGION" \
-            --tags Key=CreatedFor,Value=AWSTransformDotNET; then
+            --tags Key=CreatedFor,Value=AWSTransform; then
 
             write_log "WARN" "Waiting for stack creation to complete..."
             aws cloudformation wait stack-create-complete --stack-name "$STACK_NAME" --region "$REGION"
