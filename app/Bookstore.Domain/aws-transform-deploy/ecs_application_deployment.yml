@@ -177,10 +177,6 @@ Outputs:
     Description: Task Definition ARN
     Value: !Ref TaskDefinition
 
-  TargetGroupArn:
-    Description: Target Group ARN
-    Value: !Ref TargetGroup
-
   LogGroupName:
     Description: CloudWatch Log Group Name
     Value: !Ref LogGroup
