@@ -1,0 +1,251 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'ATX .NET Application Deployment for ECS with Fargate'
+
+Parameters:
+  ApplicationName:
+    Type: String
+    Description: Name of the application
+    Default: Bookstore.Web
+
+  VpcId:
+    Type: String
+    Description: VPC ID where the application will be deployed
+    Default: h
+
+  PrivateSubnetIds:
+    Type: String
+    Description: Private subnet IDs where ECS tasks will run
+    Default: subnet-12345,subnet-67890
+
+  AlbListenerArn:
+    Type: String
+    Description: ARN of the ALB listener for routing
+
+  EcsClusterName:
+    Type: String
+    Description: Name of the ECS cluster to deploy to
+
+  EcsSecurityGroupId:
+    Type: String
+    Description: Security group ID for ECS tasks
+
+  ListenerRulePriority:
+    Type: Number
+    Description: Priority for the ALB listener rule
+    Default: 100
+
+  ContainerImageUri:
+    Type: String
+    Description: URI of existing container image to deploy.
+
+  Cpu:
+    Type: Number
+    Description: CPU units for the ECS task
+    Default: 512
+    AllowedValues: [256, 512, 1024, 2048, 4096]
+
+  Memory:
+    Type: Number
+    Description: Memory (MB) for the ECS task
+    Default: 1024
+    AllowedValues: [512, 1024, 2048, 4096, 8192, 16384]
+
+  OperatingSystem:
+    Type: String
+    Description: Container operating system
+    Default: 'Linux'
+    AllowedValues: [Linux]
+
+  ContainerPort:
+    Type: Number
+    Description: The container port to expose
+    Default: 8080
+    MinValue: 1
+    MaxValue: 65535
+
+  EnvironmentVariables:
+    Type: String
+    Description: Key-value pairs for container environment variables
+    Default: '{"DEBUG": "false", "ENV": "production", "PORT": "5000"}'
+
+  HostHeader:
+    Type: String
+    Description: Hostname to match in ALB listener rule for host-based routing
+    Default: ''
+
+  CloudWatchLogGroup:
+    Type: String
+    Description: Cloud Watch Log Group to assign to the ECS task definition
+    Default: ''
+
+  CloudWatchLogStreamPrefix:
+    Type: String
+    Description: Log Stream prefix to use for ECS task container logs
+    Default: ''
+
+  TaskCount:
+    Type: Number
+    Description: Number of tasks ECS will keep active
+    Default: 2
+    MinValue: 1
+
+  HealthCheckPath:
+    Type: String
+    Description: Path for target group health checks
+    Default: '/health'
+
+Conditions:
+  UseEmptyEnvironment: !Equals [!Ref EnvironmentVariables, '{}']
+  UseHostBasedRouting: !Not [!Equals [!Ref HostHeader, '']]
+
+Resources:
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Ref CloudWatchLogGroup
+      RetentionInDays: 14
+      Tags:
+        - Key: ResourceName
+          Value: !Ref CloudWatchLogGroup
+        - Key: CreatedBy
+          Value: AWSTransform
+        - Key: TransformationType
+          Value: DotNET
+
+  TargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckPath: !Ref HealthCheckPath
+      Name: !Sub AWSTransform-${ApplicationName}-Target-Group
+      Port: !Ref ContainerPort
+      Protocol: HTTP
+      TargetType: ip
+      VpcId: !Ref VpcId
+      HealthCheckIntervalSeconds: 30
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 5
+      Tags:
+        - Key: ResourceName
+          Value: !Sub AWSTransform-${ApplicationName}-Target-Group
+        - Key: CreatedBy
+          Value: AWSTransform
+        - Key: TransformationType
+          Value: DotNET
+
+  ListenerRule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    Properties:
+      Actions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroup
+      Conditions:
+        - Field: host-header
+          HostHeaderConfig:
+            Values: 
+              - !Ref HostHeader
+      ListenerArn: !Ref AlbListenerArn
+      Priority: !Ref ListenerRulePriority
+
+  TaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: !Ref AWSTransform-${ApplicationName}-Task-Definition
+      Cpu: !Ref Cpu
+      Memory: !Ref Memory
+      NetworkMode: awsvpc
+      RequiresCompatibilities:
+        - FARGATE
+      ExecutionRoleArn: !Sub arn:aws:iam::${AWS::AccountId}:role/AWSTransform-Deploy-ECS-Execution-Role
+      TaskRoleArn: !Sub arn:aws:iam::${AWS::AccountId}:role/AWSTransform-Deploy-ECS-Task-Role
+      RuntimePlatform:
+        OperatingSystemFamily: !Ref OperatingSystem
+      ContainerDefinitions:
+        - Name: !Ref ApplicationName
+          Image: !Ref ContainerImageUri
+          Essential: true
+          PortMappings:
+            - ContainerPort: !Ref ContainerPort
+          Environment: !If 
+            - UseEmptyEnvironment
+            - !Ref AWS::NoValue
+            - !Split [',', !Ref EnvironmentVariables]
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-group: !Ref CloudWatchLogGroup
+              awslogs-stream-prefix: !Ref CloudWatchLogStreamPrefix
+              awslogs-region: !Ref AWS::Region
+      Tags:
+        - Key: ResourceName
+          Value: !Sub AWSTransform-${ApplicationName}-Task-Definition
+        - Key: CreatedBy
+          Value: AWSTransform
+        - Key: TransformationType
+          Value: DotNET
+
+  Service:
+    Type: AWS::ECS::Service
+    DependsOn: ListenerRule
+    Properties:
+      ServiceName: !Sub AWSTransform-${ApplicationName}-Service
+      Cluster: !Ref EcsClusterName
+      TaskDefinition: !Ref TaskDefinition
+      DesiredCount: !Ref TaskCount
+      LaunchType: FARGATE
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: DISABLED
+          Subnets: !Split [',', !Ref PrivateSubnetIds]
+          SecurityGroups:
+            - !Ref EcsSecurityGroupId
+      LoadBalancers:
+        - ContainerName: !Ref ApplicationName
+          ContainerPort: !Ref ContainerPort
+          TargetGroupArn: !Ref TargetGroup
+      Tags:
+        - Key: ResourceName
+          Value: !Sub AWSTransform-${ApplicationName}-Service
+        - Key: CreatedBy
+          Value: AWSTransform
+        - Key: TransformationType
+          Value: DotNET
+
+  ServiceAutoScalingTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    DependsOn: Service
+    Properties:
+      MaxCapacity: 10
+      MinCapacity: 1
+      ResourceId: !Sub 'service/${EcsClusterName}/${ApplicationName}'
+      RoleARN: !Sub arn:aws:iam::${AWS::AccountId}:role/aws-service-role/ecs.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_ECSService
+      ScalableDimension: ecs:service:DesiredCount
+      ServiceNamespace: ecs
+
+  ServiceAutoScalingPolicy:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Properties:
+      PolicyName: !Sub AWSTransform-${ApplicationName}-Scaling-Policy
+      PolicyType: TargetTrackingScaling
+      ScalingTargetId: !Ref ServiceAutoScalingTarget
+      TargetTrackingScalingPolicyConfiguration:
+        PredefinedMetricSpecification:
+          PredefinedMetricType: ECSServiceAverageCPUUtilization
+        TargetValue: 70
+
+Outputs:
+  ServiceName:
+    Description: ECS Service Name
+    Value: !Ref Service
+
+  TaskDefinitionArn:
+    Description: Task Definition ARN
+    Value: !Ref TaskDefinition
+
+  TargetGroupArn:
+    Description: Target Group ARN
+    Value: !Ref TargetGroup
+
+  LogGroupName:
+    Description: CloudWatch Log Group Name
+    Value: !Ref LogGroup
