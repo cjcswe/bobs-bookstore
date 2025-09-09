@@ -92,8 +92,9 @@ write_log() {
 
 show_usage() {
     write_log "INFO" "$(cat <<-EOF
-Usage:
-    ./deploy_infra.sh --deployment-type ecs [options]
+This script deploys the Application Infrastructure CloudFormation (CFN) Stack.
+
+Usage: ./deploy_infra.sh --deployment-type ecs [options]
 
 Common Parameters:
     --deployment-type       : (Required) Type of deployment
