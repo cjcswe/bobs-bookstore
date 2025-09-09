@@ -154,7 +154,7 @@ initialize_parameters() {
 
     # Generate stack name if not provided
     if [ -z "$STACK_NAME" ]; then
-        STACK_NAME="${RESOURCE_PREFIX}-stack"
+        STACK_NAME="AWSTransform-Deploy-Infra-Stack-${RESOURCE_PREFIX}"
         STACK_NAME=$(echo "$STACK_NAME" | sed -e 's/[^a-zA-Z0-9\-]/-/g' -e 's/--*/-/g')
     fi
 
@@ -242,15 +242,10 @@ deploy_stack() {
         local outputs
         outputs=$(aws cloudformation describe-stacks --stack-name "$STACK_NAME" --region "$REGION" --query 'Stacks[0].Outputs' --output json)
         
-        write_log "INFO" "Current stack has:"
-        local cluster_name
-        local vpc_id
-        cluster_name=$(echo "$outputs" | jq -r '.[] | select(.OutputKey=="EcsClusterName") | .OutputValue')
-        vpc_id=$(echo "$outputs" | jq -r '.[] | select(.OutputKey=="VpcId") | .OutputValue')
-        write_log "INFO" "ECS Cluster Name: $cluster_name"
-        write_log "INFO" "VPC ID: $vpc_id"
+        write_log "INFO" "Current stack has the following CFN outputs:"
+        echo "$outputs"
 
-        read -r -p "Are you sure you want to delete the existing stack? (y/n) " REPLY
+        read -r -p "Do you want to delete the existing stack? (y/n) " REPLY
         if [[ ! $REPLY =~ ^[Yy]$ ]]; then
             write_log "INFO" "Stack deletion cancelled by user"
             exit 0
