@@ -264,8 +264,8 @@ deploy_stack() {
     local parameters=(
         "ParameterKey=ResourcePrefix,ParameterValue=$RESOURCE_PREFIX"
         "ParameterKey=VpcId,ParameterValue=${VPC_ID:-''}"
-        "ParameterKey=PublicSubnetIds,ParameterValue=${PUBLIC_SUBNET_IDS:-''}"
-        "ParameterKey=PrivateSubnetIds,ParameterValue=${PRIVATE_SUBNET_IDS:-''}"
+        "ParameterKey=PublicSubnetIds,ParameterValue='${PUBLIC_SUBNET_IDS:-''}'"
+        "ParameterKey=PrivateSubnetIds,ParameterValue='${PRIVATE_SUBNET_IDS:-''}'"
         "ParameterKey=AlbArn,ParameterValue=${ALB_ARN:-''}"
         "ParameterKey=AlbSecurityGroupId,ParameterValue=${ALB_SECURITY_GROUP_ID:-''}"
         "ParameterKey=EcsClusterName,ParameterValue=${ECS_CLUSTER_NAME:-''}"
@@ -274,15 +274,11 @@ deploy_stack() {
         "ParameterKey=AlbListenerPort,ParameterValue=${ALB_LISTENER_PORT:-0}"
     )
 
-    # Join parameters with spaces
-    local params_string
-    params_string=$(printf "%s " "${parameters[@]}")
-
     # Create stack
     if aws cloudformation create-stack \
         --stack-name "$STACK_NAME" \
         --template-body "file://$TEMPLATE_FILE_PATH" \
-        --parameters $params_string \
+        --parameters "${parameters[@]}" \
         --capabilities CAPABILITY_IAM \
         --region "$REGION" \
         --tags Key=CreatedFor,Value=AWSTransformDotNET; then
