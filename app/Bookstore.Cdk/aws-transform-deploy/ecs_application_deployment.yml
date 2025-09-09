@@ -57,7 +57,7 @@ Parameters:
   CloudWatchLogGroup:
     Type: String
     Description: Cloud Watch Log Group to assign to the ECS task definition
-    Default: !Sub /ecs/AWSTransform-${ApplicationName}-Logs
+    Default: '/ecs/AWSTransform-Logs'
 
   CloudWatchLogStreamPrefix:
     Type: String
