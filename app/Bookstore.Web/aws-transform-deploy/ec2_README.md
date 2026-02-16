@@ -14,17 +14,27 @@ The process consists of the following steps:
 
 
 ## Prerequisites
-1. You or your account administrator have executed CloudFormation template `iam_roles_template.yml` located in `aws-transform-deploy` directory at the root of this repository or have created necessary roles other way. 
-1. You can assume the roles created by `iam_roles_template.yml`.
-2. You have your AWS credentials configured either via environment variables or credential files (see https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-authentication.html for details).
-1. Review the CloudFormation template (`iac_template.yml`). 
-1. Review the infrastructure deployment script (`deploy_infra.ps1`). 
+1. You or your account administrator have run `setup.sh` located in `aws-transform-deploy/prerequisites` directory at the root of this repository to create necessary IAM roles and S3 bucket.
+2. You can assume the role `AWSTransform-Deploy-Manual-Deployment-Role` created by the setup script.
+3. You have your AWS credentials configured either via environment variables or credential files (see https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-authentication.html for details).
+4. Review the CloudFormation template (`ec2_infra_template.yml`). 
+5. Review the infrastructure deployment script (`deploy_infra.ps1`). 
 
 
 ## Default values
 
 When using the AWS Transform Web UI to provide infrastructure parameter values, the templates are automatically populated with these defaults. 
 
+```
+    InstanceType = "t3.small"
+    VolumeSize = "30"
+    Region = "us-east-1"
+    SubnetId = "subnet-0f62b33726628fc66"
+    SecurityGroupIds = "{'sg-0040ab2f025dfc12d'}"
+    EC2InstanceProfile = "AWSTransform-Deploy-App-Instance-Role"
+    CustomAmiId = ""
+    MainBinary = "Bookstore.Web"
+```
 However, you can override any defaults by:
 
 1. modifying parameters in the CloudFormation template directly
@@ -33,18 +43,18 @@ However, you can override any defaults by:
 
 ## Provision infrastructure using deploy_infra.ps1 
 
-This script uses the provided template and some SSM Parameters created by `/aws-transform-deploy/iam_roles_template.yml` to automate the infrastructure provisioning, check for the errors and provide suggestions for deployment failures.
+This script uses the provided template to automate the infrastructure provisioning, check for the errors and provide suggestions for deployment failures.
 
 Run this script: 
 ```
-powershell ./deploy_infra.ps1 -SubnetId subnet-123456789 -SecurityGroupIds sg-123456789
+powershell ./deploy_infra.ps1 -DeploymentType EC2
 ```
 
 The script:
-1. assumes **AWSTransformDotNET-Infra-Deployment-Role** 
+1. assumes **AWSTransform-Deploy-Manual-Deployment-Role** 
 2. creates CloudFormation stack for EC2 instance
 3. prints the created EC2 instance ID in the output
-4. **saves the instance ID** to `instance_id_from_infra_deployment.config` file for use by the application deployment script
+4. **saves the instance ID** to `infrastructure.config` file for use by the application deployment script
 5. analyzes CloudFormation events and provides suggestions how to address common problems
 
 After the script successfully finishes, the EC2 instance is created and you are ready for the next step.
@@ -52,9 +62,9 @@ After the script successfully finishes, the EC2 instance is created and you are 
 Run `deploy_infra.ps1` without parameters to see other usage options.
 
 ### Using a different IAM Role
-The script assumes the **AWSTransformDotNET-Infra-Deployment-Role** by default for proper permissions (use `-SkipAssumeRole` to skip this). 
+The script assumes the **AWSTransform-Deploy-Manual-Deployment-Role** by default for proper permissions (use `-SkipAssumeRole` to skip this). 
 
-If using a different role than the default `AWSTransformDotNET-Infra-Deployment-Role` you need to:
+If using a different role than the default `AWSTransform-Deploy-Manual-Deployment-Role` you need to:
 
 1. Obtain temporary credentials for that role using AWS STS AssumeRole.
 ```
@@ -71,7 +81,7 @@ $env:AWS_SESSION_TOKEN = $credentials.SessionToken
 3. Run the deployment scripts with `-SkipAssumeRole` parameter since credentials are already configured.
 
 ```
-./deploy_infra.ps1 -SubnetId subnet-123456789 -SkipAssumeRole
+./deploy_infra.ps1 -DeploymentType EC2 -SubnetId subnet-123456789 -SkipAssumeRole
 ```
 
 
@@ -118,12 +128,12 @@ dotnet publish "<Project File Location>" -c Release -r linux-x64 -o ./publish
 Run the provided script `deploy.ps1` to deploy the application.
 
 ```
-powershell ./deploy.ps1 -publishDirectory ./publish
+powershell ./deploy.ps1 -publishDirectory ./publish -DeploymentType EC2 
 ```
 
 The script automatically:
 1. **reads EC2 instance ID** from the file created by deploy_infra.ps1 if not provided as parameter
-2. **assumes the AWSTransformDotNET-Application-Deployment-Role** by default for deployment permissions
+2. **assumes the AWSTransform-Deploy-Manual-Deployment-Role** by default for deployment permissions
 3. **uses the S3 bucket** specified in SSM parameter /transform/bucket-name if S3Bucket not provided
 4. transfers application binaries to EC2 instance
 5. configures and starts systemd service for the application on the instance
@@ -133,7 +143,7 @@ Follow the prompts and instructions from the script.
 Run `deploy.ps1` without parameters to see other usage options.
 
 ### Using a different IAM Role
-The script assumes the **AWSTransformDotNET-Application-Deployment-Role** by default for proper permissions.
+The script assumes the **AWSTransform-Deploy-Manual-Deployment-Role** by default for proper permissions.
 
 If using a different role, you need to:
 
@@ -152,7 +162,7 @@ $env:AWS_SESSION_TOKEN = $credentials.SessionToken
 3. Run the `deploy.ps1`  with -SkipAssumeRole parameter since credentials are already configured.
 
 ```
-./deploy.ps1 -publishDirectory ./publish -SkipAssumeRole
+powershell ./deploy.ps1 -publishDirectory ./publish -DeploymentType EC2 -SkipAssumeRole
 ```
 
 

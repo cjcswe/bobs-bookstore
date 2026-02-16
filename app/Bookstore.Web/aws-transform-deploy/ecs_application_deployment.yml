@@ -1,93 +1,104 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'ATX .NET Application Deployment for ECS with Fargate'
+Description: 'AWS Transform ECS Application Infrastructure'
 
 Parameters:
   ApplicationName:
     Type: String
-    Description: Name of the application
-    Default: Bookstore.Web
+    Description: 'Desired name for the application'
+    Default: 'Bookstore-Web'
+
+  ECSClusterName:
+    Type: String
+    Description: 'The ECS Cluster into which to launch resources'
 
   SubnetIds:
     Type: String
-    Description: Private subnet IDs where ECS tasks will run
+    Description: 'Subnet Ids for the ECS Service'
+    Default: 'subnet-0f62b33726628fc66'
 
-  SecurityGroupId:
+  SecurityGroupIds:
     Type: String
-    Description: Security group ID for ECS tasks
-
-  EcsClusterName:
-    Type: String
-    Description: Name of the ECS cluster to deploy to
+    Description: 'Security Group Ids for the ECS Service'
+    Default: 'sg-0040ab2f025dfc12d'
 
   ContainerImageUri:
     Type: String
-    Description: URI of existing container image to deploy.
-    Default: nginx:latest
+    Description: 'Image URI of application container'
+    Default: 'nginx:latest'
 
-  Cpu:
+  ContainerCpu:
     Type: Number
-    Description: CPU units for the ECS task
+    Description: 'CPU for the ECS Task. 1024 is 1 CPU'
     Default: 256
-    AllowedValues: [256, 512, 1024, 2048, 4096]
+    AllowedValues: [256, 512, 1024, 2048, 4096, 8192, 16384]
 
-  Memory:
+  ContainerMemory:
     Type: Number
-    Description: Memory (MB) for the ECS task
+    Description: 'Memory in megabytes (MB) for the ECS Task'
     Default: 512
-    AllowedValues: [512, 1024, 2048, 4096, 8192, 16384]
 
-  OperatingSystem:
-    Type: String
-    Description: Container operating system
-    Default: 'Linux'
-    AllowedValues: [Linux]
+  ContainerStorage:
+    Type: Number
+    Description: 'Ephemeral storage (GB) for the ECS task'
+    Default: 30
+    MinValue: 20
+    MaxValue: 200
 
   ContainerPort:
     Type: Number
-    Description: The container port to expose
+    Description: 'Port which the application expects traffic on'
     Default: 5000
     MinValue: 1
     MaxValue: 65535
 
-  EnvironmentVariables:
+  OperatingSystem:
     Type: String
-    Description: Key-value pairs for container environment variables
-    Default: '{}'
+    Description: 'Container operating system'
+    Default: 'Linux'
 
-  TaskCount:
+  ECSTaskCount:
     Type: Number
-    Description: Number of tasks ECS will keep active
+    Description: 'Number of Tasks ECS will keep active'
     Default: 1
     MinValue: 1
 
-Conditions:
-  UseEmptyEnvironment: !Equals [!Ref EnvironmentVariables, '{}']
+  ECSExecutionRole:
+    Type: String
+    Description: 'IAM Role for the ECS Service'
+    Default: 'AWSTransform-Deploy-ECS-Execution-Role'
+
+  ECSTaskRole:
+    Type: String
+    Description: 'IAM Role for running ECS Tasks'
+    Default: 'AWSTransform-Deploy-ECS-Task-Role'
 
 Resources:
-  LogGroup:
+  CloudWatchLogGroup:
     Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
     Properties:
-      LogGroupName: !Sub /ecs/AWSTransform-${ApplicationName}-Logs
+      LogGroupName: !Sub /aws/ecs/AWSTransform-Bookstore-Web-Logs-626f62-c19aa8
       RetentionInDays: 14
       Tags:
         - Key: ResourceName
-          Value: !Sub AWSTransform-${ApplicationName}-Logs
-        - Key: CreatedBy
+          Value: !Sub AWSTransform-Bookstore-Web-Logs-626f62-c19aa8
+        - Key: CreatedFor
           Value: AWSTransform
-        - Key: TransformationType
-          Value: DotNET
 
-  TaskDefinition:
+  ECSTaskDefinition:
     Type: AWS::ECS::TaskDefinition
+    DependsOn: CloudWatchLogGroup
     Properties:
-      Family: !Sub AWSTransform-${ApplicationName}-Task-Definition
-      Cpu: !Ref Cpu
-      Memory: !Ref Memory
+      Family: !Sub AWSTransform-Bookstore-Web-Task-Definition-626f62-c19aa8
+      Cpu: !Ref ContainerCpu
+      Memory: !Ref ContainerMemory
+      EphemeralStorage:
+        SizeInGiB: !Ref ContainerStorage
       NetworkMode: awsvpc
       RequiresCompatibilities:
         - FARGATE
-      ExecutionRoleArn: !Sub arn:aws:iam::${AWS::AccountId}:role/AWSTransform-Deploy-ECS-Execution-Role
-      TaskRoleArn: !Sub arn:aws:iam::${AWS::AccountId}:role/AWSTransform-Deploy-ECS-Task-Role
+      ExecutionRoleArn: !Ref ECSExecutionRole
+      TaskRoleArn: !Ref ECSTaskRole
       RuntimePlatform:
         OperatingSystemFamily: !Ref OperatingSystem
       ContainerDefinitions:
@@ -96,77 +107,46 @@ Resources:
           Essential: true
           PortMappings:
             - ContainerPort: !Ref ContainerPort
-          Environment: !If 
-            - UseEmptyEnvironment
-            - !Ref AWS::NoValue
-            - !Split [',', !Ref EnvironmentVariables]
           LogConfiguration:
             LogDriver: awslogs
             Options:
-              awslogs-group: !Ref LogGroup
+              awslogs-group: !Ref CloudWatchLogGroup
               awslogs-stream-prefix: 'ecs'
               awslogs-region: !Ref AWS::Region
       Tags:
         - Key: ResourceName
-          Value: !Sub AWSTransform-${ApplicationName}-Task-Definition
-        - Key: CreatedBy
+          Value: !Sub AWSTransform-Bookstore-Web-Task-Definition-626f62-c19aa8
+        - Key: CreatedFor
           Value: AWSTransform
-        - Key: TransformationType
-          Value: DotNET
 
-  Service:
+  ECSService:
     Type: AWS::ECS::Service
     Properties:
-      ServiceName: !Sub AWSTransform-${ApplicationName}-Service
-      Cluster: !Ref EcsClusterName
-      TaskDefinition: !Ref TaskDefinition
-      DesiredCount: !Ref TaskCount
+      ServiceName: !Sub AWSTransform-Bookstore-Web-Service-626f62-c19aa8
+      Cluster: !Ref ECSClusterName
+      TaskDefinition: !Ref ECSTaskDefinition
+      DesiredCount: !Ref ECSTaskCount
       LaunchType: FARGATE
       NetworkConfiguration:
         AwsvpcConfiguration:
           AssignPublicIp: ENABLED
-          Subnets: !Split [',', !Ref SubnetIds]
-          SecurityGroups:
-            - !Ref SecurityGroupId
+          Subnets: !Split [",", !Ref SubnetIds]
+          SecurityGroups: !Split [",", !Ref SecurityGroupIds]
       Tags:
         - Key: ResourceName
-          Value: !Sub AWSTransform-${ApplicationName}-Service
-        - Key: CreatedBy
+          Value: !Sub AWSTransform-Bookstore-Web-Service-626f62-c19aa8
+        - Key: CreatedFor
           Value: AWSTransform
-        - Key: TransformationType
-          Value: DotNET
-
-  ServiceAutoScalingTarget:
-    Type: AWS::ApplicationAutoScaling::ScalableTarget
-    DependsOn: Service
-    Properties:
-      MaxCapacity: 10
-      MinCapacity: 1
-      ResourceId: !Sub 'service/${EcsClusterName}/${ApplicationName}'
-      RoleARN: !Sub arn:aws:iam::${AWS::AccountId}:role/aws-service-role/ecs.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_ECSService
-      ScalableDimension: ecs:service:DesiredCount
-      ServiceNamespace: ecs
-
-  ServiceAutoScalingPolicy:
-    Type: AWS::ApplicationAutoScaling::ScalingPolicy
-    Properties:
-      PolicyName: !Sub AWSTransform-${ApplicationName}-Scaling-Policy
-      PolicyType: TargetTrackingScaling
-      ScalingTargetId: !Ref ServiceAutoScalingTarget
-      TargetTrackingScalingPolicyConfiguration:
-        PredefinedMetricSpecification:
-          PredefinedMetricType: ECSServiceAverageCPUUtilization
-        TargetValue: 70
 
 Outputs:
   ServiceName:
-    Description: ECS Service Name
-    Value: !Ref Service
+    Description: 'ECS Service Name'
+    Value: !Ref ECSService
 
   TaskDefinitionArn:
-    Description: Task Definition ARN
-    Value: !Ref TaskDefinition
+    Description: 'ECS Task Definition ARN'
+    Value: !Ref ECSTaskDefinition
 
   LogGroupName:
-    Description: CloudWatch Log Group Name
-    Value: !Ref LogGroup
+    Description: 'CloudWatch Log Group Name'
+    Value: !Ref CloudWatchLogGroup

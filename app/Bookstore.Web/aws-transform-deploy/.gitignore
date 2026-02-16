@@ -1,1 +1,2 @@
-instance_id_from_infra_deployment.config
+infrastructure.config
+build.config

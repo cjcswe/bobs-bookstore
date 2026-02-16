@@ -6,7 +6,7 @@ set -e
 
 # Constants
 TEMPLATE_FILE_PATH=""
-APP_INFRA_FILE="application_infrastructure.config"
+APP_INFRA_FILE="infrastructure.config"
 GITIGNORE_PATH=".gitignore"
 
 # Default values

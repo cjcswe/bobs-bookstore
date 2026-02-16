@@ -1,45 +1,43 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'ATX .NET Application Infrastructure for ECS Deployment'
+Description: 'AWS Transform ECS Deployment Infrastructure'
 
 Parameters:
-  TargetName:
+  ECSClusterName:
     Type: String
-    Description: Target name (used for resource naming)
-    MinLength: 1
-    MaxLength: 64
-    Default: TBB
+    Description: 'Desired name for the ECS Cluster'
 
-  EcsClusterName:
+  KmsKeyId:
     Type: String
-    Description: ECS Cluster name (leave empty to create new)
+    Description: 'KMS Key Id for ECS Cluster encryption'
     Default: ''
 
 Conditions:
-  CreateNewEcsCluster: !Equals [!Ref EcsClusterName, '']
+  UseCustomKmsKey: !Not [!Equals [!Ref KmsKeyId, '']]
 
 Resources:
-  EcsCluster:
-    Condition: CreateNewEcsCluster
+  ECSCluster:
     Type: AWS::ECS::Cluster
     Properties:
-      ClusterName: !Sub AWSTransform-${TargetName}-ECS-Cluster
+      ClusterName: !Ref ECSClusterName
       CapacityProviders:
         - FARGATE
       DefaultCapacityProviderStrategy:
         - CapacityProvider: FARGATE
           Weight: 1
+      Configuration:
+        !If
+          - UseCustomKmsKey
+          - ManagedStorageConfiguration:
+              FargateEphemeralStorageKmsKeyId: !Ref KmsKeyId
+              KmsKeyId: !Ref KmsKeyId
+          - !Ref AWS::NoValue
       Tags:
         - Key: ResourceName
-          Value: !Sub AWSTransform-${TargetName}-ECS-Cluster
-        - Key: CreatedBy
+          Value: !Ref ECSClusterName
+        - Key: CreatedFor
           Value: AWSTransform
-        - Key: TransformationType
-          Value: DotNET
 
 Outputs:
-  EcsClusterName:
-    Description: ECS Cluster Name
-    Value: !If 
-      - CreateNewEcsCluster
-      - !Ref EcsCluster
-      - !Ref EcsClusterName
+  ECSClusterName:
+    Description: 'ECS Cluster Name'
+    Value: !Ref ECSCluster

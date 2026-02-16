@@ -1,15 +1,38 @@
-# AWS Transform Deployment Template to Set Up Deployment Profile
+# AWS Transform Deployment – Prerequisite Setup Instructions
+
+This guide covers the initial setup of IAM roles and related AWS resources needed for AWS Transform Deployment.
+
+---
 
 ### Prerequisites
-1. Admin-level permissions on your AWS account to manage IAM Roles, IAM Instance Profiles, and CloudFormation stacks.
-2. AWS credentials properly configured via either:
-    - Environment variables (e.g. `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`)
-    - AWS credentials file (`~/.aws/credentials`)
-      See https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-authentication.html for detailed setup instructions
-3. **Review the CloudFormation template** `iam_roles.yml` before deployment.
+1. Admin-level AWS permissions for IAM roles, IAM Instance Profiles, and CloudFormation stacks.
+2. AWS CLI installed and configured with appropriate credentials. See the [AWS CLI Auth Setup Guide](https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-authentication.html) for details.
 
-### Deploy CloudFormation stack to create IAM roles and S3 bucket if needed
+---
 
+### Using the Bash Setup Script (setup.sh)
+
+```shell
+./setup.sh --stack-name AWSTransform-Deploy-IAM-Role-Stack --disable-bucket-creation false
 ```
-aws cloudformation deploy --template-file iam_roles.yml --stack-name atx-deploy-iam-roles --capabilities CAPABILITY_NAMED_IAM --tags CreatedBy=AWSTransform
+
+**Optional Parameters:**
+
+* `--stack-name`: CloudFormation stack name (default: `AWSTransform-Deploy-IAM-Role-Stack`).
+
+* `--disable-bucket-creation`: Whether to create an S3 bucket to store build artifacts (`true` or `false`, default: `false`).
+
+---
+
+### Using the PowerShell Setup Script (setup.ps1)
+```powershell
+.\setup.ps1 -StackName "AWSTransform-Deploy-IAM-Role-Stack" [-DisableBucketCreation]
 ```
+
+**Optional Parameters:**
+
+* `-StackName`: CloudFormation stack name (default: `AWSTransform-Deploy-IAM-Role-Stack`).
+
+* `-DisableBucketCreation`: Switch to prevent S3 bucket creation (default is to create the bucket).
+
+---

@@ -11,9 +11,9 @@ As part of the code transformation AWS Transform analyzed your source code repos
 
 | Project name | Project file location | Deployment Scripts and templates location |
 |--------------|----------------------|---------------------------|
-| Bookstore.Web | `/opt/amazon/lib/python3.11/site-packages/workspace/bobs-bookstore/app/Bookstore.Web/Bookstore.Web.csproj` | `/opt/amazon/lib/python3.11/site-packages/workspace/bobs-bookstore/app/Bookstore.Web/aws-transform-deploy/`
+| Bookstore.Web | `app/Bookstore.Web/Bookstore.Web.csproj` | `app/Bookstore.Web/aws-transform-deploy/`
 
-AWS Transform provides deployment scripts and AWS CloudFormation templates to help you deploy your transformed .NET applications to Amazon EC2 instances. This comprehensive deployment solution includes infrastructure provisioning, application deployment, and management tools that streamline the process of getting your applications running in the AWS cloud.
+AWS Transform provides deployment scripts and AWS CloudFormation templates to help you deploy your transformed .NET applications to Amazon EC2 instances or Amazon ECS service. This comprehensive deployment solution includes infrastructure provisioning, application deployment, and management tools that streamline the process of getting your applications running in the AWS cloud.
 
 The generated deployment assets are placed in directory `{Project Directory}/aws-transform-deploy/` for each project in the table above.
 
@@ -24,15 +24,14 @@ The deployment process follows these key steps:
 1. Core Infrastructure Setup
    - Creates required IAM Roles and Instance Profiles for secure access.
    - Provisions S3 bucket for storing deployment artifacts.
-   - Sets up SSM parameters for configuration management.
 
 2. Application Infrastructure 
    - Deploys application-specific infrastructure resources.
-   - Configures networking, load balancers, auto-scaling etc.
+   - Configures networking.
    - Sets up monitoring and logging.
 
 3. Application Deployment
-   - Uploads application packages to S3.
+   - Uploads application packages to S3 or ECR
    - Deploys applications using the provisioned infrastructure.
    - Validates deployment health.
 
@@ -47,58 +46,52 @@ To execute templates in this directory, you need admin-level permissions to crea
    - Environment variables (e.g. `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`)
    - AWS credentials file (`~/.aws/credentials`)
    See https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-authentication.html for detailed setup instructions
-3. **Review the CloudFormation template** `iam_roles_template.yml` before deployment.
+3. **Review the CloudFormation template** `prerequisites/iam_roles.yml` before deployment.
 
-### Create IAM Roles Using AWS CLI
+### Create IAM Roles and S3 Bucket
 
-Use `iam_roles_template.yml` CloudFormation template to create deployment roles:
+. You only need to do this once per account. If you already did this during using AWS Transform webapp, you can skip this step. Use `prerequisites/iam_roles.yml` CloudFormation template to create deployment roles and s3 bucket:
 
-1. AWSTransformDotNET-Infra-Deployment-Role: a role used to deploy infrastructure. Has permissions to create CloudFormation stacks, EC2 instances.
-2. AWSTransformDotNET-Application-Deployment-Role: a role used to deploy applications. Has permissions to write to S3 bucket and execute SSM commands on a given instance.
-3. AWSTransformDotNET-EC2-Instance-Role: a role used by EC2 instance to access S3 bucket.
-
-
-#### Template Parameters
-
-The `iam_roles_template.yml` CloudFormation template accepts the following parameters:
-
-| Parameter | Type | Description | Default |
-|-----------|------|-------------|----------|
-| `S3BucketName` | String | Existing S3 bucket name for storing deployment artifacts. If empty, a new bucket will be created | Empty (creates new bucket) |
-| `KMSKeyArn` | String | Optional KMS Key ARN for encryption of deployment artifacts in S3 bucket | Empty (no encryption) |
-
+1. `AWSTransform-Deploy-Manual-Deployment-Role`: a role used to deploy infrastructure. Has permissions to create CloudFormation stacks, EC2 instances, write to S3 bucket and execute SSM commands on a given instance
+2. `AWSTransform-Deploy-App-Instance-Role`: a role used by EC2 instance to run deployed application
+3. `AWSTransform-Deploy-ECS-Task-Role`: a role used by ECS tasks to access AWS services
+4. `AWSTransform-Deploy-ECS-Execution-Role`: a role used by ECS service to pull container images from ECR and manage task lifecycle
 
 ### Deploy CloudFormation stack to create IAM roles and S3 bucket
+#### Using the Bash Setup Script (setup.sh)
 
-```
-aws cloudformation deploy --template-file iam_roles_template.yml --stack-name atx-deploy-iam-roles --capabilities CAPABILITY_NAMED_IAM --tags CreatedFor=AWSTransformDotNET
-```
-### Deploy CloudFormation stack with parameters
-```
-aws cloudformation deploy --template-file iam_roles_template.yml --stack-name atx-deploy-iam-roles --capabilities CAPABILITY_NAMED_IAM --parameter-overrides S3BucketName=my-deployment-bucket KMSKeyArn=arn:aws:kms:region:account:key/key-id --tags CreatedFor=AWSTransformDotNET
+```shell
+cd prerequisites
+./setup.sh --stack-name AWSTransform-Deploy-IAM-Role-Stack
 ```
 
-### Check stack status and outputs
+**Optional Parameters:**
+
+* `--stack-name`: CloudFormation stack name (default: `AWSTransform-Deploy-IAM-Role-Stack`).
+
+* `--disable-bucket-creation`: Whether to create an S3 bucket to store build artifacts (`true` or `false`, default: `false`).
+
+---
+
+#### Using the PowerShell Setup Script (setup.ps1)
+```powershell
+cd prerequisites
+.\setup.ps1 -StackName AWSTransform-Deploy-IAM-Role-Stack
 ```
-aws cloudformation describe-stacks --stack-name atx-deploy-iam-roles --query 'Stacks[0].StackStatus' --output text
-```
 
+**Optional Parameters:**
 
-### SSM Parameter Created
+* `-StackName`: CloudFormation stack name (default: `AWSTransform-Deploy-IAM-Role-Stack`).
 
-The template creates the following SSM parameter:
+* `-DisableBucketCreation`: Switch to prevent S3 bucket creation (default is to create the bucket).
 
-- **Parameter Name**: `/transform/bucket-name`
-- **Purpose**: Stores the S3 bucket name used for deployments
-- **Usage**: Deployment scripts automatically read this parameter to determine where to upload application packages
-- **Value**: Either the provided `S3BucketName` parameter or the name of the newly created bucket
+---
 
 ## Assigning users to the roles
 
 After the IAM roles are created, the administrator needs to edit the trust policy for the following roles
 to specify which users/roles can assume them for infrastructure and application deployment:
-1. AWSTransformDotNET-Infra-Deployment-Role
-2. AWSTransformDotNET-Application-Deployment-Role
+1. AWSTransform-Deploy-Manual-Deployment-Role
 
 ### Example trust policy to allow specific IAM users/roles to assume the deployment role:
 ```

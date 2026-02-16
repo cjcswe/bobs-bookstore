@@ -2,10 +2,6 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: 'IAM role and instance profile for EC2 instances to build .NET applications'
 
 Parameters:
-  KmsKeyArn:
-    Type: String
-    Description: 'ARN of the KMS key for encryption/decryption'
-    Default: ''
   CreateS3Bucket:
     Type: String
     Description: 'Whether to create an S3 bucket'
@@ -15,7 +11,6 @@ Parameters:
       - 'false'
 
 Conditions:
-  HasKMSKey: !Not [!Equals [!Ref KmsKeyArn, '']]
   CreateS3Bucket: !Equals [!Ref CreateS3Bucket, 'true']
 
 Mappings:
@@ -28,7 +23,6 @@ Resources:
     Type: AWS::S3::Bucket
     Condition: CreateS3Bucket
     Properties:
-#      BucketName: !FindInMap [Constants, S3BucketName]
       BucketName: !Sub
         - '${BucketName}-${AWS::AccountId}-${AWS::Region}'
         - BucketName: !FindInMap [ Constants, S3BucketName, Value ]
@@ -43,7 +37,7 @@ Resources:
         IgnorePublicAcls: true
         RestrictPublicBuckets: true
       Tags:
-        - Key: CreatedBy
+        - Key: CreatedFor
           Value: AWSTransform
 
   EC2BuildRole:
@@ -60,7 +54,7 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
       Tags:
-        - Key: CreatedBy
+        - Key: CreatedFor
           Value: AWSTransform
       Policies:
         - PolicyName: S3AccessPolicy
@@ -82,19 +76,16 @@ Resources:
                   - !Sub 
                     - 'arn:aws:s3:::${BucketName}-${AWS::AccountId}-${AWS::Region}'
                     - BucketName: !FindInMap [Constants, S3BucketName, Value]
-        - !If
-          - HasKMSKey
-          - PolicyName: KMSAccessPolicy
-            PolicyDocument:
-              Version: '2012-10-17'
-              Statement:
-                - Effect: Allow
-                  Action:
-                    - kms:GenerateDataKey
-                    - kms:Decrypt
-                    - kms:DescribeKey
-                  Resource: !Ref KmsKeyArn
-          - !Ref AWS::NoValue
+        - PolicyName: KMSAccessPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - kms:GenerateDataKey
+                  - kms:Decrypt
+                  - kms:DescribeKey
+                Resource: '*'
         - PolicyName: ECRAccessPolicy
           PolicyDocument:
             Version: '2012-10-17'
@@ -102,13 +93,16 @@ Resources:
               - Effect: Allow
                 Action:
                   - ecr:CompleteLayerUpload
-                  - ecr:GetAuthorizationToken
                   - ecr:UploadLayerPart
                   - ecr:InitiateLayerUpload
                   - ecr:BatchCheckLayerAvailability
                   - ecr:PutImage
                   - ecr:BatchGetImage
-                Resource: 'arn:aws:ecr:*:*:repository/awstransform-deploy*'
+                Resource: 'arn:aws:ecr:*:*:repository/awstransform*'
+              - Effect: Allow
+                Action:
+                  - ecr:GetAuthorizationToken
+                Resource: '*'
 
   EC2BuildInstanceProfile:
     Type: AWS::IAM::InstanceProfile
@@ -131,7 +125,7 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
       Tags:
-        - Key: CreatedBy
+        - Key: CreatedFor
           Value: AWSTransform
       Policies:
         - PolicyName: S3DownloadPolicy
@@ -152,23 +146,20 @@ Resources:
                   - !Sub 
                     - 'arn:aws:s3:::${BucketName}-${AWS::AccountId}-${AWS::Region}'
                     - BucketName: !FindInMap [Constants, S3BucketName, Value]
-        - !If
-          - HasKMSKey
-          - PolicyName: KMSDecryptPolicy
-            PolicyDocument:
-              Version: '2012-10-17'
-              Statement:
-                - Effect: Allow
-                  Action:
-                    - kms:Decrypt
-                    - kms:GenerateDataKey
-                    - kms:DescribeKey
-                  Resource: !Ref KmsKeyArn
-                  Condition:
-                    StringLike:
-                      kms:ViaService:
-                        - "s3.*.amazonaws.com"
-          - !Ref AWS::NoValue
+        - PolicyName: KMSDecryptPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - kms:Decrypt
+                  - kms:GenerateDataKey
+                  - kms:DescribeKey
+                Resource: '*'
+                Condition:
+                  StringLike:
+                    kms:ViaService:
+                      - "s3.*.amazonaws.com"
 
         - PolicyName: SecretsManagerPolicy
           PolicyDocument:
@@ -201,6 +192,9 @@ Resources:
             Principal:
               Service: ecs-tasks.amazonaws.com
             Action: sts:AssumeRole
+      Tags:
+        - Key: CreatedFor
+          Value: AWSTransform
       Policies:
         - PolicyName: SecretsManagerPolicy
           PolicyDocument:
@@ -214,9 +208,6 @@ Resources:
                   StringEquals:
                     'aws:ResourceTag/Project': 'atx-db-modernization'
                     'aws:ResourceTag/Owner': 'database-connector'
-      Tags:
-        - Key: CreatedBy
-          Value: AWSTransform
 
   EcsExecutionRole:
     Type: AWS::IAM::Role
@@ -232,8 +223,26 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
       Tags:
-        - Key: CreatedBy
+        - Key: CreatedFor
           Value: AWSTransform
+
+  ManualDeploymentRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      RoleName: 'AWSTransform-Deploy-Manual-Deployment-Role'
+      Tags:
+        - Key: CreatedFor
+          Value: AWSTransform
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !Sub 'arn:aws:iam::${AWS::AccountId}:root'
+            Action: 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSTransformApplicationDeploymentPolicy
+        - arn:aws:iam::aws:policy/service-role/AWSTransformApplicationECSDeploymentPolicy
 
 Outputs:
   S3BucketName:
