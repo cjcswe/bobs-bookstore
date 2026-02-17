@@ -19,7 +19,7 @@ param(
     [string]$S3Folder,
 
     # ECS-specific parameters
-    [string]$StackName = "AWSTransform-Deploy-App-Stack-Bookstore-Web-626f62-c19aa8",
+    [string]$StackName = "AWSTransform-Deploy-App-Stack-Bookstore-Web-636a63-04fdfb",
     [string]$ECSClusterName,
     [string[]]$SubnetIds,
     [string[]]$SecurityGroupIds,

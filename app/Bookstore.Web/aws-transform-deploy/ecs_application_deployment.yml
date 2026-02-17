@@ -77,11 +77,11 @@ Resources:
     Type: AWS::Logs::LogGroup
     DeletionPolicy: Delete
     Properties:
-      LogGroupName: !Sub /aws/ecs/AWSTransform-Bookstore-Web-Logs-626f62-c19aa8
+      LogGroupName: !Sub /aws/ecs/AWSTransform-Bookstore-Web-Logs-636a63-04fdfb
       RetentionInDays: 14
       Tags:
         - Key: ResourceName
-          Value: !Sub AWSTransform-Bookstore-Web-Logs-626f62-c19aa8
+          Value: !Sub AWSTransform-Bookstore-Web-Logs-636a63-04fdfb
         - Key: CreatedFor
           Value: AWSTransform
 
@@ -89,7 +89,7 @@ Resources:
     Type: AWS::ECS::TaskDefinition
     DependsOn: CloudWatchLogGroup
     Properties:
-      Family: !Sub AWSTransform-Bookstore-Web-Task-Definition-626f62-c19aa8
+      Family: !Sub AWSTransform-Bookstore-Web-Task-Definition-636a63-04fdfb
       Cpu: !Ref ContainerCpu
       Memory: !Ref ContainerMemory
       EphemeralStorage:
@@ -115,14 +115,14 @@ Resources:
               awslogs-region: !Ref AWS::Region
       Tags:
         - Key: ResourceName
-          Value: !Sub AWSTransform-Bookstore-Web-Task-Definition-626f62-c19aa8
+          Value: !Sub AWSTransform-Bookstore-Web-Task-Definition-636a63-04fdfb
         - Key: CreatedFor
           Value: AWSTransform
 
   ECSService:
     Type: AWS::ECS::Service
     Properties:
-      ServiceName: !Sub AWSTransform-Bookstore-Web-Service-626f62-c19aa8
+      ServiceName: !Sub AWSTransform-Bookstore-Web-Service-636a63-04fdfb
       Cluster: !Ref ECSClusterName
       TaskDefinition: !Ref ECSTaskDefinition
       DesiredCount: !Ref ECSTaskCount
@@ -134,7 +134,7 @@ Resources:
           SecurityGroups: !Split [",", !Ref SecurityGroupIds]
       Tags:
         - Key: ResourceName
-          Value: !Sub AWSTransform-Bookstore-Web-Service-626f62-c19aa8
+          Value: !Sub AWSTransform-Bookstore-Web-Service-636a63-04fdfb
         - Key: CreatedFor
           Value: AWSTransform
 
