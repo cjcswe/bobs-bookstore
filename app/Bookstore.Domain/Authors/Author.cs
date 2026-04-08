@@ -15,26 +15,26 @@ namespace Bookstore.Domain.Authors
 
         [Required]
         [StringLength(15)]
-        public string NationalIDNumber { get; set; }
+        public required string NationalIDNumber { get; set; }
 
         [Required]
         [StringLength(256)]
-        public string LoginID { get; set; }
+        public required string LoginID { get; set; }
 
         [Required]
         [StringLength(50)]
-        public string JobTitle { get; set; }
+        public required string JobTitle { get; set; }
 
         [Required]
         public DateTime BirthDate { get; set; }
 
         [Required]
         [StringLength(1)]
-        public string MaritalStatus { get; set; }
+        public required string MaritalStatus { get; set; }
 
         [Required]
         [StringLength(1)]
-        public string Gender { get; set; }
+        public required string Gender { get; set; }
 
         [Required]
         public DateTime HireDate { get; set; }

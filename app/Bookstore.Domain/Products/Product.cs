@@ -9,11 +9,11 @@ public class Product
 
     [Required]
     [StringLength(15)]
-    public string Name { get; set; }
+    public required string Name { get; set; }
 
     [Required]
     [StringLength(256)]
-    public string ProductNumber { get; set; }
+    public required string ProductNumber { get; set; }
 
     [Required]
     public int SafetyStockLevel { get; set; }

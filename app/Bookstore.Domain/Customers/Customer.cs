@@ -2,7 +2,7 @@
 {
     public class Customer : Entity
     {
-        public string Sub { get; set; }
+        public string Sub { get; set; } = null!;
 
         public string? Username { get; set; }
 

@@ -15,9 +15,11 @@ namespace Bookstore.Web.Helpers
     {
         private const string UserId = "FB6135C7-1464-4A72-B74E-4B63D343DD09";
 
+#pragma warning disable CS0618 // ISystemClock is obsolete in .NET 8; upgrade OpenIdConnect to 8.x to use TimeProvider
         public LocalAuthenticationHandler(IOptionsMonitor<AuthenticationSchemeOptions> options, ILoggerFactory logger, UrlEncoder encoder, ISystemClock clock) : base(options, logger, encoder, clock)
         {
         }
+#pragma warning restore CS0618
 
         protected override async Task HandleChallengeAsync(AuthenticationProperties properties)
         {

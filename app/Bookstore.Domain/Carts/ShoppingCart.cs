@@ -4,7 +4,7 @@
     {
         public List<ShoppingCartItem> ShoppingCartItems { get; private set; } = new();
 
-        public string CorrelationId { get; set; }
+        public string CorrelationId { get; set; } = null!;
 
         public ShoppingCart(string correlationId)
         {
@@ -15,7 +15,7 @@
         {
             return filter == ShoppingCartItemFilter.IncludeOutOfStockItems ?
                 ShoppingCartItems.Where(x => x.WantToBuy) :
-                ShoppingCartItems.Where(x => x.WantToBuy && x.Book.Quantity > 0);
+                ShoppingCartItems.Where(x => x.WantToBuy && x.Book!.Quantity > 0);
         }
 
         public IEnumerable<ShoppingCartItem> GetWishListItems()
@@ -51,7 +51,7 @@
 
         public decimal GetSubTotal(ShoppingCartItemFilter filter)
         {
-            return GetShoppingCartItems(filter).Sum(x => x.Book.Price);
+            return GetShoppingCartItems(filter).Sum(x => x.Book!.Price);
         }
     }
 

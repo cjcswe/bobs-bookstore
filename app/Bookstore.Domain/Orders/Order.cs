@@ -15,10 +15,10 @@ namespace Bookstore.Domain.Orders
         private readonly List<OrderItem> orderItems = new List<OrderItem>();
 
         public int CustomerId { get; set; }
-        public Customer Customer { get; set; }
+        public Customer? Customer { get; set; }
 
         public int AddressId { get; set; }
-        public Address Address { get; set; }
+        public Address? Address { get; set; }
 
         public IEnumerable<OrderItem> OrderItems => orderItems;
 
@@ -28,7 +28,7 @@ namespace Bookstore.Domain.Orders
 
         public decimal Tax => SubTotal * 0.1m;
 
-        public decimal SubTotal => OrderItems.Sum(x => x.Book.Price);
+        public decimal SubTotal => OrderItems.Sum(x => x.Book!.Price);
 
         public decimal Total => SubTotal + Tax;
 
