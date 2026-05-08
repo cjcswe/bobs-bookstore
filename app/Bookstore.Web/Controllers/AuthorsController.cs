@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Bookstore.Data;
 using Bookstore.Domain.Authors;
-using Microsoft.Data.SqlClient;
+using Npgsql;
 
 namespace Bookstore.Web.Controllers
 {
@@ -59,7 +59,9 @@ namespace Bookstore.Web.Controllers
         {
             if (ModelState.IsValid)
             {
-                author.ModifiedDate = DateTime.Now;
+                author.ModifiedDate = DateTime.UtcNow;
+                author.BirthDate = author.BirthDate.ToUniversalTime();
+                author.HireDate = author.HireDate.ToUniversalTime();
                 _context.Add(author);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
@@ -138,7 +140,7 @@ namespace Bookstore.Web.Controllers
             {
                 try
                 {
-                    await EditUsingStoredProcedure(author.BusinessEntityID, author.NationalIDNumber, author.BirthDate,
+                    await EditUsingRawSql(author.BusinessEntityID, author.NationalIDNumber, author.BirthDate,
                         author.MaritalStatus, author.Gender);
                 }
                 catch (DbUpdateConcurrencyException)
@@ -155,18 +157,20 @@ namespace Bookstore.Web.Controllers
             return View(author);
         }
         
-        public async Task<bool> EditUsingStoredProcedure(int businessEntityId, string nationalIdNumber, DateTime birthDate, string maritalStatus, string gender)
+        // Step 5 & 9: Renamed from EditUsingStoredProcedure; uses PostgreSQL positional parameters
+        // ($1–$5) and quoted identifiers for the "Author" table and its columns.
+        public async Task<bool> EditUsingRawSql(int businessEntityId, string nationalIdNumber, DateTime birthDate, string maritalStatus, string gender)
         {
             try
             {
-                string sql = @"DECLARE @rowsAffected INT;EXEC @rowsAffected = [dbo].[uspUpdateAuthorPersonalInfo] @BusinessEntityID, @NationalIDNumber, @BirthDate, @MaritalStatus, @Gender;SELECT @rowsAffected;";
+                string sql = @"UPDATE ""Author"" SET ""NationalIDNumber""=$1, ""BirthDate""=$2, ""MaritalStatus""=$3, ""Gender""=$4 WHERE ""BusinessEntityID""=$5";
 
-                var rowsAffected = await _context.Database.ExecuteSqlRawAsync(sql, 
-                    new SqlParameter("@BusinessEntityID", businessEntityId),
-                    new SqlParameter("@NationalIDNumber", nationalIdNumber),
-                    new SqlParameter("@BirthDate", birthDate.ToUniversalTime()),
-                    new SqlParameter("@MaritalStatus", maritalStatus),
-                    new SqlParameter("@Gender", gender)
+                var rowsAffected = await _context.Database.ExecuteSqlRawAsync(sql,
+                    new NpgsqlParameter { Value = nationalIdNumber },
+                    new NpgsqlParameter { Value = birthDate.ToUniversalTime() },
+                    new NpgsqlParameter { Value = maritalStatus },
+                    new NpgsqlParameter { Value = gender },
+                    new NpgsqlParameter { Value = businessEntityId }
                     );
 
                 return rowsAffected > 0;
@@ -178,12 +182,13 @@ namespace Bookstore.Web.Controllers
             }
         }
 
+        // Step 6: Uses PostgreSQL-quoted identifier for the "Author" table.
         public async Task<List<Author>> FindAllAuthorsEmbeddedSql()
         {
             try
             {
                 // Build the SQL command
-                string sql = @"SELECT * FROM Author";
+                string sql = @"SELECT * FROM ""Author""";
 
                 // Execute the SQL command and get the number of rows affected
                 var results = await _context.Database.SqlQueryRaw<Author>(sql).ToListAsync();
@@ -198,16 +203,16 @@ namespace Bookstore.Web.Controllers
             }
         }
 
-
+        // Step 7: Uses PostgreSQL positional parameter syntax and quoted identifiers.
         public async Task<bool> DeleteAuthorEmbeddedSql(int businessEntityId)
         {
             try
             {
                 // Build the SQL command
-                string sql = @"DECLARE @rowsAffected INT;EXEC @rowsAffected = [dbo].[uspDeleteAuthor] @BusinessEntityID;SELECT @rowsAffected;";
+                string sql = @"DELETE FROM ""Author"" WHERE ""BusinessEntityID""=$1";
 
                 // Execute the SQL command and get the number of rows affected
-                var rowsAffected = await _context.Database.ExecuteSqlRawAsync(sql, new SqlParameter("@BusinessEntityID", businessEntityId));
+                var rowsAffected = await _context.Database.ExecuteSqlRawAsync(sql, new NpgsqlParameter { Value = businessEntityId });
 
                 return rowsAffected > 0;
             }
@@ -219,15 +224,17 @@ namespace Bookstore.Web.Controllers
             }
         }
 
+        // Step 8: Uses PostgreSQL positional parameter syntax ($1) instead of @HireDate.
+        // TO_CHAR and DATE_PART are valid PostgreSQL functions — no changes needed there.
         public async Task<List<AuthorAgeResult>> SelectAuthorsByHireYear(int hireYear)
         {
             try
             {
                 // Build the SQL command
-                string sql = @"SELECT BusinessEntityID, FORMAT(ModifiedDate, 'yyyy-MM-dd HH:mm:ss') AS FormattedModifiedDate, DATEDIFF(YEAR, BirthDate, GETDATE()) AS Age FROM Author WHERE DATEPART(YEAR, HireDate) = @HireDate;";
+                string sql = @"SELECT ""BusinessEntityID"", TO_CHAR(""ModifiedDate"", 'YYYY-MM-DD HH24:MI:SS') AS FormattedModifiedDate, DATE_PART('year', AGE(""BirthDate"")) AS Age FROM ""Author"" WHERE DATE_PART('year', ""HireDate"") = $1";
 
                 // Execute the SQL command and get the number of rows affected
-                var results = await _context.Database.SqlQueryRaw<AuthorAgeResult>(sql, new SqlParameter("@HireDate", hireYear)).ToListAsync();
+                var results = await _context.Database.SqlQueryRaw<AuthorAgeResult>(sql, new NpgsqlParameter { Value = hireYear }).ToListAsync();
 
                 return results;
             }

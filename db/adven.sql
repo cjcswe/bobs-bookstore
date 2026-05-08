@@ -929,73 +929,59 @@ BEGIN
 END;
 GO
       
-CREATE PROCEDURE [dbo].[uspUpdateAuthorPersonalInfo]
-    @BusinessEntityID [int], 
-    @NationalIDNumber [nvarchar](15), 
-    @BirthDate [datetime], 
-    @MaritalStatus [nchar](1), 
-    @Gender [nchar](1)
-WITH EXECUTE AS CALLER
-AS
+CREATE OR REPLACE FUNCTION uspUpdateAuthorPersonalInfo(
+    p_BusinessEntityID INT,
+    p_NationalIDNumber VARCHAR(15),
+    p_BirthDate DATE,
+    p_MaritalStatus CHAR(1),
+    p_Gender CHAR(1)
+) RETURNS VOID AS $$
 BEGIN
-    SET NOCOUNT ON;
-
-    BEGIN TRY
-        UPDATE [dbo].[Author] 
-        SET [NationalIDNumber] = @NationalIDNumber 
-            ,[BirthDate] = @BirthDate 
-            ,[MaritalStatus] = @MaritalStatus 
-            ,[Gender] = @Gender 
-        WHERE [BusinessEntityID] = @BusinessEntityID;
-    END TRY
-    BEGIN CATCH
-        EXECUTE [dbo].[uspLogError];
-    END CATCH;
+    UPDATE Author
+    SET NationalIDNumber = p_NationalIDNumber,
+        BirthDate        = p_BirthDate,
+        MaritalStatus    = p_MaritalStatus,
+        Gender           = p_Gender
+    WHERE BusinessEntityID = p_BusinessEntityID;
+EXCEPTION
+    WHEN OTHERS THEN
+        RAISE EXCEPTION 'Error in uspUpdateAuthorPersonalInfo: %', SQLERRM;
 END;
-GO
+$$ LANGUAGE plpgsql;
 
-CREATE PROCEDURE [dbo].[uspDeleteAuthor]
-    @BusinessEntityID [int]
-WITH EXECUTE AS CALLER
-AS
+CREATE OR REPLACE FUNCTION uspDeleteAuthor(
+    p_BusinessEntityID INT
+) RETURNS VOID AS $$
+DECLARE
+    v_rows_affected INT;
 BEGIN
-    SET NOCOUNT ON;
+    DELETE FROM Author
+    WHERE BusinessEntityID = p_BusinessEntityID;
 
-    BEGIN TRY
-        DELETE FROM [dbo].[Author]
-        WHERE [BusinessEntityID] = @BusinessEntityID;
+    GET DIAGNOSTICS v_rows_affected = ROW_COUNT;
 
-        -- Check if the delete was successful
-        IF @@ROWCOUNT = 0
-        BEGIN
-            RAISERROR('No author found with the provided BusinessEntityID.', 16, 1);
-            RETURN;
-        END
-    END TRY
-    BEGIN CATCH
-        -- Log the error and re-throw
-        EXECUTE [dbo].[uspLogError];
-        THROW;
-    END CATCH;
+    IF v_rows_affected = 0 THEN
+        RAISE EXCEPTION 'No author found with the provided BusinessEntityID.';
+    END IF;
+EXCEPTION
+    WHEN OTHERS THEN
+        RAISE EXCEPTION 'Error in uspDeleteAuthor: %', SQLERRM;
 END;
-GO
+$$ LANGUAGE plpgsql;
 
-CREATE PROCEDURE [dbo].[uspGetProductData]
-    @my_cursor CURSOR VARYING OUTPUT
-AS
+CREATE OR REPLACE FUNCTION uspGetProductData()
+RETURNS TABLE (
+    ProductID        INT,
+    Name             VARCHAR(100),
+    ProductNumber    VARCHAR(25),
+    SafetyStockLevel SMALLINT
+) AS $$
 BEGIN
-    -- Open a cursor for the SELECT query
-    SET @my_cursor = CURSOR FOR
-    SELECT
-        ProductID,
-        Name,
-        ProductNumber,
-        SafetyStockLevel
-    FROM dbo.Product;
-    -- Open the cursor to make it available to the caller
-    OPEN @my_cursor;
+    RETURN QUERY
+    SELECT p.ProductID, p.Name, p.ProductNumber, p.SafetyStockLevel
+    FROM Product p;
 END;
-GO
+$$ LANGUAGE plpgsql;
 
 CREATE FUNCTION [dbo].[ufnGetAccountingEndDate]()
 RETURNS [datetime] 

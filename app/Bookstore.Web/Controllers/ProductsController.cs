@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Bookstore.Data;
 using Bookstore.Domain.Products;
-using Microsoft.Data.SqlClient;
 
 namespace Bookstore.Web.Controllers
 {
@@ -30,7 +29,8 @@ namespace Bookstore.Web.Controllers
         {
             try
             {
-                string sql = @"EXEC [dbo].[uspGetProductData];";
+                // Step 10: PostgreSQL-quoted identifiers for table and column names.
+                string sql = @"SELECT ""ProductID"", ""Name"", ""ProductNumber"", ""SafetyStockLevel"" FROM ""Product""";
 
                 return await _context.Database.SqlQueryRaw<Product>(sql).ToListAsync();
             }
